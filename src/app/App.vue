@@ -6,6 +6,7 @@ import EntityList from './components/EntityList.vue'
 import { ns } from '../namespaces.js'
 import rdf from 'rdf-ext'
 import { Parser } from 'n3'
+import SparqlEditor from './Editor.vue'
 
 const focusOn = (type) => {
   return {
@@ -38,11 +39,7 @@ onMounted(() => {
 
 <template>
   <n-config-provider :theme="lightTheme">
-    <n-card>
-      <n-space>
-        Query
-      </n-space>
-    </n-card>
+    <sparql-editor></sparql-editor>
     {{ parseError }}
     <div class="entity-container">
       <EntityList :entities="entities"/>
