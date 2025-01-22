@@ -1,5 +1,5 @@
 # TED open-data-explorer
 
-- Two views sharing a model.
+- Two views
   - Technical
   - Business 
