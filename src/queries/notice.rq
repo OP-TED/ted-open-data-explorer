@@ -1,0 +1,11 @@
+PREFIX epo: <http://data.europa.eu/a4g/ontology#>
+PREFIX cccev: <http://data.europa.eu/m8g/>
+
+CONSTRUCT {
+  ?s ?p ?o
+}
+WHERE {
+  graph <http://data.europa.eu/a4g/resource/2023/533553_2023> {
+       ?s ?p ?o
+  }
+}

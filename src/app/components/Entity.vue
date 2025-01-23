@@ -40,9 +40,7 @@ onMounted(() => {
       </a>
     </template>
     <template v-else>
-      <Term :term="pointer.term">
-        <ToolIcon :term="toRaw(pointer.term)"/>
-      </Term>
+      <Term :term="pointer.term"/>
     </template>
 
   </template>
