@@ -59,7 +59,7 @@ CONSTRUCT {
   ?s ?p ?o
 }
 WHERE {
-  graph <http://data.europa.eu/a4g/resource/2023/533553_2023> {
+  graph <http://data.europa.eu/a4g/resource/2024/00665930_2024> {
        ?s ?p ?o
   }
 }`
