@@ -3,10 +3,13 @@ import { computed } from 'vue'
 import { mapResponse } from './noticeDetails.js'
 import { useFetch } from '@vueuse/core'
 import { NCard, NTimeline, NTimelineItem } from 'naive-ui'
+import { useSelectionController } from '../controllers/selectionController.js'
 
 const props = defineProps({
   procedureTedLinks: String,
 })
+
+const controller = useSelectionController()
 
 const { isFetching, error, data } = useFetch(props.procedureTedLinks)
 
@@ -21,7 +24,7 @@ const details = computed(() => {
 })
 
 function select (publicationNumber) {
-  console.log(publicationNumber)
+  controller.selectNoticeByPublicationNumber(publicationNumber)
 }
 </script>
 
@@ -43,13 +46,6 @@ function select (publicationNumber) {
         </template>
       </n-timeline>
     </div>
-
-    <!--        <n-card size="small" :title="notice.publicationNumber">-->
-    <!--          <p><a :href="notice.html" target="_blank">HTML</a>|<a :href="notice.pdf" target="_blank">PDF</a>|<a-->
-    <!--              :href="notice.xml" target="_blank">XML</a></p>-->
-    <!--          <p>Publication Date: {{ notice.publicationDate }}</p>-->
-    <!--        </n-card>-->
-
   </div>
   <div v-else>No data available</div>
 </template>

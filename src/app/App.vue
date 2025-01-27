@@ -10,8 +10,12 @@ import { ns } from '../namespaces.js'
 import rdf from 'rdf-ext'
 import { Parser } from 'n3'
 import SparqlEditor from './Editor.vue'
+import { useSelectionController } from './controllers/selectionController.js'
+import { storeToRefs } from 'pinia'
 
-const query = ref('')
+const selectionController = useSelectionController()
+const { query } = storeToRefs(selectionController)
+
 const procedureTedLinks = ref([])
 
 const { state, execute, isReady, isLoading, error } = useAsyncState(
@@ -56,7 +60,7 @@ const executeQuery = () => {
 }
 
 onMounted(() => {
-  query.value = `PREFIX epo: <http://data.europa.eu/a4g/ontology#>
+  selectionController.query = `PREFIX epo: <http://data.europa.eu/a4g/ontology#>
 PREFIX cccev: <http://data.europa.eu/m8g/>
 
 CONSTRUCT {
