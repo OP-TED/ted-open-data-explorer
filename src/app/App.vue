@@ -1,4 +1,5 @@
 <script setup>
+import grapoi from 'grapoi'
 import { lightTheme, NButton, NConfigProvider, NSpace } from 'naive-ui'
 import { computed, onMounted, ref, watchEffect } from 'vue'
 import { getEntities } from '../traversers/entities.js'
@@ -14,38 +15,46 @@ import { executeQuery } from '../services/doQuery.js'
 const selectionController = useSelectionController()
 const { query } = storeToRefs(selectionController)
 
-const dataset = ref(null)
 const error = ref(null)
 const isLoading = ref(false)
 
-const procedureTedLinks = computed(() => {
-  if (!dataset.value) return []
-  const [tedLink] = getProcedureTedLinks({ dataset: dataset.value })
-  return tedLink
-})
-
-const entities = computed(() => {
-  if (!dataset.value) return []
-  return getEntities(dataset.value, {
-    ignoreNamedGraphs: true,
-    matchers: [
-      { predicate: ns.rdf.type, object: ns.epo.Notice },
-      {},
-    ],
-  })
-})
+const entities = ref(false)
+const procedureInfo = ref()
 
 async function doExecuteQuery () {
   try {
     isLoading.value = true
     error.value = null
-    dataset.value = await executeQuery(query.value)
+    entities.value = false
+    procedureInfo.value  = undefined
+    const dataset = await executeQuery(query.value)
+
+    entities.value = getEntities(dataset, {
+      ignoreNamedGraphs: true,
+      matchers: [
+        { predicate: ns.rdf.type, object: ns.epo.ChangeInformation },
+        { predicate: ns.rdf.type, object: ns.epo.ResultNotice },
+        { predicate: ns.rdf.type, object: ns.epo.Notice },
+        {},
+      ],
+    })
+    const [tedLink] = getProcedureTedLinks({ dataset })
+    const publicationNumbers = guessPublicationNumbers({dataset})
+
+    procedureInfo.value = {
+      tedLink,
+      publicationNumbers
+    }
   } catch (e) {
     error.value = e
-    dataset.value = null
   } finally {
     isLoading.value = false
   }
+}
+
+function guessPublicationNumbers ({ dataset }) {
+  const pointer = grapoi({ dataset })
+  return pointer.out(ns.epo.hasNoticePublicationNumber).values
 }
 
 // Add watchEffect to automatically execute query when it changes
@@ -57,7 +66,6 @@ watchEffect(() => {
 
 onMounted(() => {
   selectionController.selectNoticeByPublicationNumber('665930-2024')
-
 })
 </script>
 
@@ -68,9 +76,9 @@ onMounted(() => {
         <sparql-editor v-model="query" style="width: 100%;"></sparql-editor>
         <n-button @click="doExecuteQuery" :loading="isLoading" style="margin-top: 8px;">Execute Query</n-button>
       </div>
+      <Procedure v-if="procedureInfo" :procedureInfo="procedureInfo"/>
       <div v-if="error">{{ error.message }}</div>
-      <div v-else-if="dataset" class="entity-container">
-        <Procedure :procedureTedLinks="procedureTedLinks"/>
+      <div v-else-if="entities" class="entity-container">
         <EntityList :entities="entities"/>
       </div>
       <div v-else-if="isLoading">Loading...</div>

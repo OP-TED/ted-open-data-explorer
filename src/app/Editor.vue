@@ -40,7 +40,6 @@ onMounted(() => {
   })
 })
 
-// Watch for changes in the modelValue prop to update the editor's content
 watch(() => props.modelValue, (newValue) => {
   if (editor && newValue !== editor.state.doc.toString()) {
     editor.dispatch({

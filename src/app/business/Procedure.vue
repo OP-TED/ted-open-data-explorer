@@ -6,12 +6,12 @@ import { NCard, NTimeline, NTimelineItem } from 'naive-ui'
 import { useSelectionController } from '../controllers/selectionController.js'
 
 const props = defineProps({
-  procedureTedLinks: String,
+  procedureInfo: Object,
 })
 
 const controller = useSelectionController()
 
-const { isFetching, error, data } = useFetch(props.procedureTedLinks)
+const { isFetching, error, data } = useFetch(props.procedureInfo.tedLink)
 
 const details = computed(() => {
   if (!data.value) return []
@@ -23,27 +23,46 @@ const details = computed(() => {
   }
 })
 
-function select(publicationNumber) {
+function select (publicationNumber) {
   controller.selectNoticeByPublicationNumber(publicationNumber)
 }
+
+// Publication numbers sometimes have zeroes, sometimes they don't
+
+const normalize = (number) =>number.startsWith('00') ? number : `00${number}`
+
+function contained (publicationNumber) {
+  const numbers = new Set(props.procedureInfo.publicationNumbers.map(normalize))
+  return numbers.has(normalize(publicationNumber))
+}
+
 </script>
 
 <template>
   <div v-if="isFetching">Fetching data...</div>
   <div v-else-if="error">Error: {{ error }}</div>
   <div v-else-if="data">
-    <div v-if="details.procedureId">Procedure ID: {{ details.procedureId }}</div>
+    <div v-if="details.procedureId">Procedure ID: <a :href="procedureInfo.tedLink">{{ details.procedureId }}</a></div>
     <div style="overflow: auto">
       <n-timeline horizontal>
         <template v-for="notice of details.notices">
           <n-timeline-item
-              type="success"
+              :type="`${notice.nextVersion?'warning':'success'}`"
               :title="notice.publicationNumber"
-              :content="notice.noticeType.value"
+              :content="`${notice.noticeType.value} - ${notice.formType.value}`"
               :time="notice.publicationDate"
               class="timeline-item"
               @click="select(notice.publicationNumber)"
-          />
+          >
+            <template #header>
+              <div v-if="contained(notice.publicationNumber)">[{{ notice.publicationNumber }}]</div>
+            </template>
+            <template #footer>
+              <a :href="notice.html">{{ notice.publicationNumber }}</a>
+            </template>
+
+          </n-timeline-item>
+
         </template>
       </n-timeline>
     </div>

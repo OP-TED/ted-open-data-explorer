@@ -17,7 +17,7 @@ function doProxy (url) {
 }
 
 function getTedAPIUrls ({ dataset }) {
-  const apiURL = (id) => `https://api.ted.europa.eu/private-search/api/v1/notices/family/${id}?language=EN&fields=publication-date&fields=notice-type&fields=publication-number&fields=deadline-receipt-request&fields=procedure-identifier&fields=change-notice-version-identifier&fields=modification-previous-notice-identifier&fields=previous-planning-identifier-part-lot&fields=previous-planning-identifier-part-part&sort=publication-date,desc`
+  const apiURL = (id) => `https://api.ted.europa.eu/private-search/api/v1/notices/family/${id}?language=EN&fields=publication-date&fields=notice-type&fields=form-type&fields=publication-number&fields=deadline-receipt-request&fields=procedure-identifier&fields=change-notice-version-identifier&fields=modification-previous-notice-identifier&fields=previous-planning-identifier-part-lot&fields=previous-planning-identifier-part-part&sort=publication-date,desc`
   return guessProcedureId({ dataset }).map(apiURL)
 }
 
@@ -26,7 +26,6 @@ function getProcedureTedLinks ({ dataset }) {
 }
 
 function mapResponse (tedResponse) {
-console.log(tedResponse)
   const notices = tedResponse['notices'] || []
   const links = []
   notices.forEach(notice => {
@@ -40,10 +39,12 @@ console.log(tedResponse)
       pdf: pdfLink,
       xml: xmlLink,
       html: htmlLink,
+      nextVersion: notice['next-version'],
       publicationNumber: notice['publication-number'],
       publicationDate: notice['publication-date'],
       procedureId: notice['procedure-identifier'],
       noticeType: notice['notice-type'],
+      formType: notice['form-type'],
     })
   })
   return links
