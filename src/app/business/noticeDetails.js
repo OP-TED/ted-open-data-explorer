@@ -26,7 +26,7 @@ function getProcedureTedLinks ({ dataset }) {
 }
 
 function mapResponse (tedResponse) {
-
+console.log(tedResponse)
   const notices = tedResponse['notices'] || []
   const links = []
   notices.forEach(notice => {
@@ -43,6 +43,7 @@ function mapResponse (tedResponse) {
       publicationNumber: notice['publication-number'],
       publicationDate: notice['publication-date'],
       procedureId: notice['procedure-identifier'],
+      noticeType: notice['notice-type'],
     })
   })
   return links

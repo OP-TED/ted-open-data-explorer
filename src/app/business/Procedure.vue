@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { mapResponse } from './noticeDetails.js'
 import { useFetch } from '@vueuse/core'
-import { NCard } from 'naive-ui'
+import { NCard, NTimeline, NTimelineItem } from 'naive-ui'
 
 const props = defineProps({
   procedureTedLinks: String,
@@ -20,23 +20,36 @@ const details = computed(() => {
   }
 })
 
+function select (publicationNumber) {
+  console.log(publicationNumber)
+}
 </script>
 
 <template>
-  <div>
-    <p v-if="isFetching">Fetching data...</p>
-    <p v-else-if="error">Error: {{ error }}</p>
-    <p v-else-if="data">
-      <p>Procedure ID: {{ details.procedureId }}</p>
-      <template v-for="notice of details.notices">
-        <n-card size="small" :title="notice.publicationNumber">
-          <p><a :href="notice.html" target="_blank">HTML</a>|<a :href="notice.pdf" target="_blank">PDF</a>|<a
-              :href="notice.xml" target="_blank">XML</a></p>
-          <p>Publication Date: {{ notice.publicationDate }}</p>
-        </n-card>
-      </template>
+  <div v-if="isFetching">Fetching data...</div>
+  <div v-else-if="error">Error: {{ error }}</div>
+  <div v-else-if="data">
+    <div v-if="details.procedureId">Procedure ID: {{ details.procedureId }}</div>
+    <div style="overflow: auto">
+      <n-timeline horizontal>
+        <template v-for="notice of details.notices">
+          <n-timeline-item
+              type="success"
+              :title="notice.publicationNumber"
+              :content="notice.noticeType.value"
+              :time="notice.publicationDate"
+              @click="select(notice.publicationNumber)"
+          />
+        </template>
+      </n-timeline>
+    </div>
 
-    </p>
-    <p v-else>No data available</p>
+    <!--        <n-card size="small" :title="notice.publicationNumber">-->
+    <!--          <p><a :href="notice.html" target="_blank">HTML</a>|<a :href="notice.pdf" target="_blank">PDF</a>|<a-->
+    <!--              :href="notice.xml" target="_blank">XML</a></p>-->
+    <!--          <p>Publication Date: {{ notice.publicationDate }}</p>-->
+    <!--        </n-card>-->
+
   </div>
+  <div v-else>No data available</div>
 </template>
