@@ -23,7 +23,7 @@ const details = computed(() => {
   }
 })
 
-function select (publicationNumber) {
+function select(publicationNumber) {
   controller.selectNoticeByPublicationNumber(publicationNumber)
 }
 </script>
@@ -41,6 +41,7 @@ function select (publicationNumber) {
               :title="notice.publicationNumber"
               :content="notice.noticeType.value"
               :time="notice.publicationDate"
+              class="timeline-item"
               @click="select(notice.publicationNumber)"
           />
         </template>
@@ -49,3 +50,22 @@ function select (publicationNumber) {
   </div>
   <div v-else>No data available</div>
 </template>
+
+<style scoped>
+.timeline-item {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.timeline-item:hover {
+  transform: translateY(-2px);
+}
+
+:deep(.n-timeline-item-content) {
+  cursor: pointer;
+}
+
+:deep(.n-timeline-item-content:hover) {
+  color: #18a058;
+}
+</style>

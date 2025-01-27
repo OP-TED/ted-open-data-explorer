@@ -1,76 +1,63 @@
 <script setup>
 import { lightTheme, NButton, NConfigProvider, NSpace } from 'naive-ui'
-import { onMounted, ref } from 'vue'
-import { useAsyncState } from '@vueuse/core'
+import { computed, onMounted, ref, watchEffect } from 'vue'
 import { getEntities } from '../traversers/entities.js'
 import { getProcedureTedLinks } from './business/noticeDetails.js'
 import Procedure from './business/Procedure.vue'
 import EntityList from './components/EntityList.vue'
 import { ns } from '../namespaces.js'
-import rdf from 'rdf-ext'
-import { Parser } from 'n3'
 import SparqlEditor from './Editor.vue'
 import { useSelectionController } from './controllers/selectionController.js'
 import { storeToRefs } from 'pinia'
+import { executeQuery } from '../services/doQuery.js'
 
 const selectionController = useSelectionController()
 const { query } = storeToRefs(selectionController)
 
-const procedureTedLinks = ref([])
+const dataset = ref(null)
+const error = ref(null)
+const isLoading = ref(false)
 
-const { state, execute, isReady, isLoading, error } = useAsyncState(
-    () => {
-      const headers = new Headers({
-        'Accept': 'text/turtle',
-        'Content-Type': 'application/x-www-form-urlencoded',
-      })
-      return fetch('/sparql', {
-        method: 'POST',
-        headers: headers,
-        body: new URLSearchParams({ query: query.value }).toString(),
-      }).then(response => {
-        if (!response.ok) {
-          return response.text().then(text => {
-            throw new Error(text)
-          })
-        }
-        return response.text()
-      }).then(responseData => {
-        const parser = new Parser({ format: 'text/turtle' })
-        const dataset = rdf.dataset([...parser.parse(responseData)])
+const procedureTedLinks = computed(() => {
+  if (!dataset.value) return []
+  const [tedLink] = getProcedureTedLinks({ dataset: dataset.value })
+  return tedLink
+})
 
-        const [tedLink] = getProcedureTedLinks({ dataset })
-        procedureTedLinks.value = tedLink
+const entities = computed(() => {
+  if (!dataset.value) return []
+  return getEntities(dataset.value, {
+    ignoreNamedGraphs: true,
+    matchers: [
+      { predicate: ns.rdf.type, object: ns.epo.Notice },
+      {},
+    ],
+  })
+})
 
-        return getEntities(dataset, {
-          ignoreNamedGraphs: true,
-          matchers: [
-            { predicate: ns.rdf.type, object: ns.epo.Notice },
-            {},
-          ],
-        })
-      })
-    },
-    [],
-    { immediate: false, errorMessage: 'Failed to fetch entities' },
-)
-
-const executeQuery = () => {
-  execute()
+async function doExecuteQuery () {
+  try {
+    isLoading.value = true
+    error.value = null
+    dataset.value = await executeQuery(query.value)
+  } catch (e) {
+    error.value = e
+    dataset.value = null
+  } finally {
+    isLoading.value = false
+  }
 }
+
+// Add watchEffect to automatically execute query when it changes
+watchEffect(() => {
+  if (query.value) {
+    doExecuteQuery()
+  }
+})
 
 onMounted(() => {
-  selectionController.query = `PREFIX epo: <http://data.europa.eu/a4g/ontology#>
-PREFIX cccev: <http://data.europa.eu/m8g/>
+  selectionController.selectNoticeByPublicationNumber('665930-2024')
 
-CONSTRUCT {
-  ?s ?p ?o
-}
-WHERE {
-  graph <http://data.europa.eu/a4g/resource/2024/00665930_2024> {
-       ?s ?p ?o
-  }
-}`
 })
 </script>
 
@@ -79,12 +66,12 @@ WHERE {
     <n-space vertical>
       <div style="display: flex; flex-direction: column; align-items: flex-end;">
         <sparql-editor v-model="query" style="width: 100%;"></sparql-editor>
-        <n-button @click="executeQuery" :loading="isLoading" style="margin-top: 8px;">Execute Query</n-button>
+        <n-button @click="doExecuteQuery" :loading="isLoading" style="margin-top: 8px;">Execute Query</n-button>
       </div>
       <div v-if="error">{{ error.message }}</div>
-      <div v-else-if="isReady" class="entity-container">
+      <div v-else-if="dataset" class="entity-container">
         <Procedure :procedureTedLinks="procedureTedLinks"/>
-        <EntityList :entities="state"/>
+        <EntityList :entities="entities"/>
       </div>
       <div v-else-if="isLoading">Loading...</div>
     </n-space>

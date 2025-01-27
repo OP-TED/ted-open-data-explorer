@@ -14,7 +14,7 @@ CONSTRUCT {
 WHERE {
   graph ?g {
        ?s ?p ?o .
-       ?s epo:hasNoticePublicationNumber "${normalized}"
+       ?notice epo:hasNoticePublicationNumber "${normalized}"
   }
 }
 `
