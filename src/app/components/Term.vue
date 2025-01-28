@@ -2,6 +2,7 @@
 
 import { ns } from '../../namespaces.js'
 import { computed, ref } from 'vue'
+import { useSelectionController } from '../controllers/selectionController.js'
 
 const props = defineProps({
   term: Object,
@@ -31,9 +32,12 @@ function guessPrefix (value) {
   return { display: value, href: value }
 }
 
-const namedNodeDisplay = computed(() => {
+const termLabel = computed(() => {
   return props.term.termType === 'NamedNode' ? guessPrefix(props.term.value) : undefined
 })
+
+const controller = useSelectionController()
+
 
 </script>
 <template>
@@ -43,10 +47,10 @@ const namedNodeDisplay = computed(() => {
       <slot></slot>
     </span>
 
-    <template v-if="namedNodeDisplay">
-      <a href="#"><span v-if="namedNodeDisplay.prefix"
-                        class="vocab">{{ namedNodeDisplay.prefix }}</span>
-        {{ namedNodeDisplay.display }}</a>
+    <template v-if="termLabel">
+      <a href="#" @click="controller.selectNamed(term, termLabel)"><span v-if="termLabel.prefix"
+                        class="vocab">{{ termLabel.prefix }}</span>
+        {{ termLabel.display }}</a>
     </template>
     <template v-else>
       {{ term.value }}

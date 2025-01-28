@@ -77,11 +77,4 @@ function contained (publicationNumber) {
   transform: translateY(-2px);
 }
 
-:deep(.n-timeline-item-content) {
-  cursor: pointer;
-}
-
-:deep(.n-timeline-item-content:hover) {
-  color: #18a058;
-}
 </style>
