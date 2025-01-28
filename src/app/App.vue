@@ -1,10 +1,10 @@
 <script setup>
-import grapoi from 'grapoi'
 import { lightTheme, NButton, NConfigProvider, NSpace } from 'naive-ui'
 import { computed, onMounted, ref, watchEffect } from 'vue'
 import { getEntities } from '../traversers/entities.js'
-import { getProcedureTedLinks } from './business/noticeDetails.js'
+import { extractEntities } from './business/extractEntities.js'
 import Procedure from './business/Procedure.vue'
+import { procedureAPIUrl } from './business/tedAPI.js'
 import EntityList from './components/EntityList.vue'
 import { ns } from '../namespaces.js'
 import SparqlEditor from './Editor.vue'
@@ -19,14 +19,14 @@ const error = ref(null)
 const isLoading = ref(false)
 
 const entities = ref(false)
-const procedureInfo = ref()
+const extracted = ref(false)
 
 async function doExecuteQuery () {
   try {
     isLoading.value = true
     error.value = null
     entities.value = false
-    procedureInfo.value  = undefined
+    extracted.value = undefined
     const dataset = await executeQuery(query.value)
 
     entities.value = getEntities(dataset, {
@@ -38,23 +38,14 @@ async function doExecuteQuery () {
         {},
       ],
     })
-    const [tedLink] = getProcedureTedLinks({ dataset })
-    const publicationNumbers = guessPublicationNumbers({dataset})
 
-    procedureInfo.value = {
-      tedLink,
-      publicationNumbers
-    }
+    extracted.value = extractEntities({ dataset })
+
   } catch (e) {
     error.value = e
   } finally {
     isLoading.value = false
   }
-}
-
-function guessPublicationNumbers ({ dataset }) {
-  const pointer = grapoi({ dataset })
-  return pointer.out(ns.epo.hasNoticePublicationNumber).values
 }
 
 // Add watchEffect to automatically execute query when it changes
@@ -76,7 +67,11 @@ onMounted(() => {
         <sparql-editor v-model="query" style="width: 100%;"></sparql-editor>
         <n-button @click="doExecuteQuery" :loading="isLoading" style="margin-top: 8px;">Execute Query</n-button>
       </div>
-      <Procedure v-if="procedureInfo" :procedureInfo="procedureInfo"/>
+      <template v-if="extracted" v-for="procedureId of extracted.procedureIds">
+        <Procedure :procedureId="procedureId"
+                   :publicationNumbers="extracted.publicationNumbers"/>
+      </template>
+
       <div v-if="error">{{ error.message }}</div>
       <div v-else-if="entities" class="entity-container">
         <EntityList :entities="entities"/>

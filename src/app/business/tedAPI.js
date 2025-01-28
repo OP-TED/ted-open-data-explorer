@@ -1,14 +1,3 @@
-import grapoi from 'grapoi'
-import { ns } from '../../namespaces.js'
-
-function guessProcedureId ({ dataset }) {
-  const pointer = grapoi({ dataset })
-
-  return pointer.out(ns.epo.refersToProcedure).
-    out(ns.adms.identifier).
-    out(ns.skos.notation).values
-}
-
 function doProxy (url) {
   const proxyUrl = 'https://corsproxy.io/?'
   const targetUrl = encodeURIComponent(
@@ -16,13 +5,11 @@ function doProxy (url) {
   return `${proxyUrl}${targetUrl}`
 }
 
-function getTedAPIUrls ({ dataset }) {
-  const apiURL = (id) => `https://api.ted.europa.eu/private-search/api/v1/notices/family/${id}?language=EN&fields=publication-date&fields=notice-type&fields=form-type&fields=publication-number&fields=deadline-receipt-request&fields=procedure-identifier&fields=change-notice-version-identifier&fields=modification-previous-notice-identifier&fields=previous-planning-identifier-part-lot&fields=previous-planning-identifier-part-part&sort=publication-date,desc`
-  return guessProcedureId({ dataset }).map(apiURL)
-}
+const apiURL = (id) => `https://api.ted.europa.eu/private-search/api/v1/notices/family/${id}?language=EN&fields=publication-date&fields=notice-type&fields=form-type&fields=publication-number&fields=deadline-receipt-request&fields=procedure-identifier&fields=change-notice-version-identifier&fields=modification-previous-notice-identifier&fields=previous-planning-identifier-part-lot&fields=previous-planning-identifier-part-part&sort=publication-date,desc`
 
-function getProcedureTedLinks ({ dataset }) {
-  return getTedAPIUrls({ dataset }).map(doProxy)
+function procedureAPIUrl (procedureId) {
+  const url = apiURL(procedureId)
+  return doProxy(url)
 }
 
 function mapResponse (tedResponse) {
@@ -51,4 +38,4 @@ function mapResponse (tedResponse) {
 
 }
 
-export { getProcedureTedLinks, mapResponse }
+export { procedureAPIUrl, mapResponse }

@@ -1,26 +1,25 @@
 <script setup>
 import { computed } from 'vue'
-import { mapResponse } from './noticeDetails.js'
+import { mapResponse, procedureAPIUrl } from './tedAPI.js'
 import { useFetch } from '@vueuse/core'
-import { NCard, NTimeline, NTimelineItem } from 'naive-ui'
+import { NTimeline, NTimelineItem } from 'naive-ui'
 import { useSelectionController } from '../controllers/selectionController.js'
 
 const props = defineProps({
-  procedureInfo: Object,
+  procedureId: String,
+  publicationNumbers: Array,
 })
 
+const procedureUrl = computed(() => procedureAPIUrl(props.procedureId))
 const controller = useSelectionController()
 
-const { isFetching, error, data } = useFetch(props.procedureInfo.tedLink)
+const { isFetching, error, data } = useFetch(procedureUrl.value)
 
-const details = computed(() => {
+const notices = computed(() => {
   if (!data.value) return []
   const parsedData = JSON.parse(data.value)
-  const mapped = mapResponse(parsedData)
-  return {
-    procedureId: mapped[0].procedureId,
-    notices: mapped,
-  }
+  console.log('parsedData', parsedData)
+  return mapResponse(parsedData)
 })
 
 function select (publicationNumber) {
@@ -28,11 +27,10 @@ function select (publicationNumber) {
 }
 
 // Publication numbers sometimes have zeroes, sometimes they don't
-
-const normalize = (number) =>number.startsWith('00') ? number : `00${number}`
+const normalize = (number) => number.startsWith('00') ? number : `00${number}`
 
 function contained (publicationNumber) {
-  const numbers = new Set(props.procedureInfo.publicationNumbers.map(normalize))
+  const numbers = new Set(props.publicationNumbers.map(normalize))
   return numbers.has(normalize(publicationNumber))
 }
 
@@ -42,10 +40,10 @@ function contained (publicationNumber) {
   <div v-if="isFetching">Fetching data...</div>
   <div v-else-if="error">Error: {{ error }}</div>
   <div v-else-if="data">
-    <div v-if="details.procedureId">Procedure ID: <a :href="procedureInfo.tedLink">{{ details.procedureId }}</a></div>
+    <div v-if="procedureId">Procedure ID: <a :href="procedureUrl">{{ procedureId }}</a></div>
     <div style="overflow: auto">
       <n-timeline horizontal>
-        <template v-for="notice of details.notices">
+        <template v-for="notice of notices">
           <n-timeline-item
               :type="`${notice.nextVersion?'warning':'success'}`"
               :title="notice.publicationNumber"
@@ -55,7 +53,7 @@ function contained (publicationNumber) {
               @click="select(notice.publicationNumber)"
           >
             <template #header>
-              <div v-if="contained(notice.publicationNumber)">[{{ notice.publicationNumber }}]</div>
+              <h3 v-if="contained(notice.publicationNumber)">{{ notice.publicationNumber }}</h3>
             </template>
             <template #footer>
               <a :href="notice.html">{{ notice.publicationNumber }}</a>
