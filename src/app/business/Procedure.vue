@@ -18,7 +18,6 @@ const { isFetching, error, data } = useFetch(procedureUrl.value)
 const notices = computed(() => {
   if (!data.value) return []
   const parsedData = JSON.parse(data.value)
-  console.log('parsedData', parsedData)
   return mapResponse(parsedData)
 })
 

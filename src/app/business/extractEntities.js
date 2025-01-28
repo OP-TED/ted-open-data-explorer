@@ -11,11 +11,13 @@ function guessPublicationNumbers (pointer) {
   return pointer.out(ns.epo.hasNoticePublicationNumber).values
 }
 
+const nodup = (arr) => [...new Set(arr)]
+
 function extractEntities ({ dataset }) {
   const pointer = grapoi({ dataset })
   return {
-    procedureIds: guessProcedureIds(pointer),
-    publicationNumbers: guessPublicationNumbers(pointer),
+    procedureIds: nodup(guessProcedureIds(pointer)),
+    publicationNumbers: nodup(guessPublicationNumbers(pointer)),
   }
 }
 
