@@ -38,18 +38,25 @@ const termLabel = computed(() => {
 
 const controller = useSelectionController()
 
-function select (term, termLabel) {
+const isAuthority = (term) => term.value.startsWith('http://data.europa.eu/a4g/resource/authority')
+const isResource = (term) => term.value.startsWith('http://data.europa.eu/a4g/resource')
+const isOntology = (term) => term.value.startsWith('http://data.europa.eu/a4g/ontology#')
 
-  if (term.value.startsWith('http://data.europa.eu/a4g/resource/authority')) {
+function select (term, termLabel) {
+  /**
+   * Cellar doesn't have Concise Bounded Description in place, having { <res> ?p ?o } UNION { ?s ?p <res> } by default
+   * Which is unberable for authority tables
+   */
+
+  if (isOntology(term)) {
+    controller.selectOntologyDescribe(term, termLabel)
+  } else if (isAuthority(term)) {
     controller.selectNamed(term, termLabel)
-  } else if (term.value.startsWith('http://data.europa.eu/a4g/resource/')) {
-    // More expensive, reserved for instance
+  } else if (isResource(term)) {
     controller.selectNamedDescribe(term, termLabel)
   } else {
     controller.selectNamed(term, termLabel)
-
   }
-
 }
 
 </script>
@@ -62,7 +69,9 @@ function select (term, termLabel) {
 
     <template v-if="termLabel">
       <a href="#" @click="select(term, termLabel)"><span v-if="termLabel.prefix"
-                                                         class="vocab"> {{termLabel.prefix}}</span>{{termLabel.display}}</a>
+                                                         class="vocab"> {{
+          termLabel.prefix
+        }}</span>{{ termLabel.display }}</a>
     </template>
     <template v-else>
       {{ term.value }}

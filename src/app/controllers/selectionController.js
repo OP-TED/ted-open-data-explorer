@@ -3,6 +3,7 @@ import getNoticeByPublicationNumber
   from '../../queries/getNoticeByPublicationNumber.js'
 import getNamed from '../../queries/getNamed.js'
 import getDescribe from '../../queries/getDescribe.js'
+import getOntologyDescribe from '../../queries/getOntologyDescribe.js'
 
 import { ref } from 'vue'
 
@@ -31,6 +32,9 @@ export const useSelectionController = defineStore('notice', () => {
   const selectNamedDescribe = (term, termLabel) => {
     doTermQuery(getDescribe(term), term, termLabel)
   }
+  const selectOntologyDescribe = (term, termLabel) => {
+    doTermQuery(getOntologyDescribe(term), term, termLabel)
+  }
 
   const doTermQuery = (newQuery, term, termLabel) => {
     const label = termLabel.prefix
@@ -50,6 +54,7 @@ export const useSelectionController = defineStore('notice', () => {
     selectNoticeByPublicationNumber,
     selectNamed,
     selectNamedDescribe,
+    selectOntologyDescribe,
     removeHistoryItem,
   }
 })
