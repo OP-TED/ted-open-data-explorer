@@ -38,25 +38,9 @@ const termLabel = computed(() => {
 
 const controller = useSelectionController()
 
-const isAuthority = (term) => term.value.startsWith('http://data.europa.eu/a4g/resource/authority')
-const isResource = (term) => term.value.startsWith('http://data.europa.eu/a4g/resource')
-const isOntology = (term) => term.value.startsWith('http://data.europa.eu/a4g/ontology#')
 
 function select (term, termLabel) {
-  /**
-   * Cellar doesn't have Concise Bounded Description in place, having { <res> ?p ?o } UNION { ?s ?p <res> } by default
-   * Which is unberable for authority tables
-   */
-
-  if (isOntology(term)) {
-    controller.selectOntologyDescribe(term, termLabel)
-  } else if (isAuthority(term)) {
-    controller.selectNamed(term, termLabel)
-  } else if (isResource(term)) {
-    controller.selectNamedDescribe(term, termLabel)
-  } else {
-    controller.selectNamed(term, termLabel)
-  }
+  controller.selectNamed(term, termLabel)
 }
 
 </script>

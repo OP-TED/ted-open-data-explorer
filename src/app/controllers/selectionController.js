@@ -1,10 +1,14 @@
 import { defineStore } from 'pinia'
 import getNoticeByPublicationNumber
   from '../../queries/getNoticeByPublicationNumber.js'
-import getNamed from '../../queries/getNamed.js'
-import getDescribe from '../../queries/getDescribe.js'
-import getOntologyDescribe from '../../queries/getOntologyDescribe.js'
-
+import {
+  describeWithPragma,
+  describeHardcodedLevels,
+  describeOneLevel,
+  simpleDescribe,
+  getNamedGraphHit,
+} from '../../queries/getTermDescriptionQuery.js'
+import { ns } from '../../namespaces.js'
 import { ref } from 'vue'
 
 export const useSelectionController = defineStore('notice', () => {
@@ -26,14 +30,14 @@ export const useSelectionController = defineStore('notice', () => {
   }
 
   const selectNamed = (term, termLabel) => {
-    doTermQuery(getNamed(term), term, termLabel)
-  }
 
-  const selectNamedDescribe = (term, termLabel) => {
-    doTermQuery(getDescribe(term), term, termLabel)
-  }
-  const selectOntologyDescribe = (term, termLabel) => {
-    doTermQuery(getOntologyDescribe(term), term, termLabel)
+    /**
+     * Cellar doesn't have Concise Bounded Description in place, having { <res> ?p ?o } UNION { ?s ?p <res> } by default
+     * Which is unberable for authority tables
+     */
+
+    doTermQuery(describeWithPragma(term), term, termLabel)
+
   }
 
   const doTermQuery = (newQuery, term, termLabel) => {
@@ -53,8 +57,6 @@ export const useSelectionController = defineStore('notice', () => {
     query,
     selectNoticeByPublicationNumber,
     selectNamed,
-    selectNamedDescribe,
-    selectOntologyDescribe,
     removeHistoryItem,
   }
 })
