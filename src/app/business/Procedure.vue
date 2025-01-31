@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import { mapResponse, procedureAPIUrl } from './tedAPI.js'
+import { mapResponse, procedureAPIUrl, apiURL } from './tedAPI.js'
 import { useFetch } from '@vueuse/core'
 import { NTimeline, NTimelineItem } from 'naive-ui'
 import { useSelectionController } from '../controllers/selectionController.js'
@@ -11,6 +11,8 @@ const props = defineProps({
 })
 
 const procedureUrl = computed(() => procedureAPIUrl(props.procedureId))
+const procedureClickableUrl = computed(() => apiURL(props.procedureId))
+
 const controller = useSelectionController()
 
 const { isFetching, error, data } = useFetch(procedureUrl.value)
@@ -39,7 +41,7 @@ function contained (publicationNumber) {
   <div v-if="isFetching">Fetching data...</div>
   <div v-else-if="error">Error: {{ error }}</div>
   <div v-else-if="data">
-    <div v-if="procedureId">Procedure ID: <a :href="procedureUrl">{{ procedureId }}</a></div>
+    <div v-if="procedureId">Procedure ID: <a :href="procedureClickableUrl">{{ procedureId }}</a></div>
     <div style="overflow: auto">
       <n-timeline horizontal>
         <template v-for="notice of notices">

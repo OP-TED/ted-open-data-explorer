@@ -38,4 +38,4 @@ function mapResponse (tedResponse) {
 
 }
 
-export { procedureAPIUrl, mapResponse }
+export { procedureAPIUrl, mapResponse, apiURL }
