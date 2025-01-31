@@ -3,12 +3,7 @@ import getNoticeByPublicationNumber
   from '../../queries/getNoticeByPublicationNumber.js'
 import {
   describeWithPragma,
-  describeHardcodedLevels,
-  describeOneLevel,
-  simpleDescribe,
-  getNamedGraphHit,
 } from '../../queries/getTermDescriptionQuery.js'
-import { ns } from '../../namespaces.js'
 import { ref } from 'vue'
 
 export const useSelectionController = defineStore('notice', () => {
@@ -30,14 +25,7 @@ export const useSelectionController = defineStore('notice', () => {
   }
 
   const selectNamed = (term, termLabel) => {
-
-    /**
-     * Cellar doesn't have Concise Bounded Description in place, having { <res> ?p ?o } UNION { ?s ?p <res> } by default
-     * Which is unberable for authority tables
-     */
-
     doTermQuery(describeWithPragma(term), term, termLabel)
-
   }
 
   const doTermQuery = (newQuery, term, termLabel) => {
