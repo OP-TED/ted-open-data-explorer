@@ -2,6 +2,7 @@
 import { lightTheme, NConfigProvider, NSpace, NTag, useMessage } from 'naive-ui'
 import { computed, onMounted, ref, watchEffect } from 'vue'
 import { getEntities } from '../traversers/entities.js'
+import { getRandomPublicationNumber } from './business/examples.js'
 import { extractEntities } from './business/extractEntities.js'
 import Procedure from './business/Procedure.vue'
 import EntityList from './components/EntityList.vue'
@@ -66,7 +67,8 @@ watchEffect(() => {
 })
 
 onMounted(() => {
-  selectionController.selectNoticeByPublicationNumber('665930-2024')
+
+  selectionController.selectNoticeByPublicationNumber(getRandomPublicationNumber())
 })
 </script>
 
