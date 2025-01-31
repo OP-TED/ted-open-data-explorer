@@ -39,6 +39,10 @@ const termLabel = computed(() => {
 const controller = useSelectionController()
 
 
+function select (term, termLabel) {
+  controller.selectNamed(term, termLabel)
+}
+
 </script>
 <template>
 
@@ -48,9 +52,10 @@ const controller = useSelectionController()
     </span>
 
     <template v-if="termLabel">
-      <a href="#" @click="controller.selectNamed(term, termLabel)"><span v-if="termLabel.prefix"
-                        class="vocab">{{ termLabel.prefix }}</span>
-        {{ termLabel.display }}</a>
+      <a href="#" @click="select(term, termLabel)"><span v-if="termLabel.prefix"
+                                                         class="vocab"> {{
+          termLabel.prefix
+        }}</span>{{ termLabel.display }}</a>
     </template>
     <template v-else>
       {{ term.value }}

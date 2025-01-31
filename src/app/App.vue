@@ -18,6 +18,7 @@ const error = ref(null)
 const isLoading = ref(false)
 const entities = ref(false)
 const extracted = ref(false)
+const stats = ref(false)
 
 async function doExecuteQuery() {
   try {
@@ -39,6 +40,9 @@ async function doExecuteQuery() {
     })
 
     extracted.value = extractEntities({ dataset })
+    stats.value = {
+      triples:dataset.size
+    }
 
   } catch (e) {
     error.value = e
@@ -89,11 +93,14 @@ onMounted(() => {
         </n-tag>
       </n-space>
 
+
       <div v-if="error">{{ error.message }}</div>
       <template v-if="extracted" v-for="procedureId of extracted.procedureIds">
         <Procedure :procedureId="procedureId"
                   :publicationNumbers="extracted.publicationNumbers"/>
       </template>
+      <template v-if="stats">{{stats}}</template>
+
       <div v-if="entities" class="entity-container">
         <EntityList :entities="entities"/>
       </div>
