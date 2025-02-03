@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { computed, ref, shallowReadonly, shallowRef, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { getEntities } from '../../traversers/entities.js'
 import { extractEntities } from '../business/extractEntities.js'
 import { executeQuery } from '../../services/doQuery.js'
@@ -7,6 +7,7 @@ import getNoticeByPublicationNumber
   from '../../queries/getNoticeByPublicationNumber.js'
 import { describeWithPragma } from '../../queries/getTermDescriptionQuery.js'
 import { ns } from '../../namespaces.js'
+import { useStorage } from '@vueuse/core'
 
 const defaultOptions = {
   ignoreNamedGraphs: true,
@@ -20,7 +21,7 @@ const defaultOptions = {
 
 export const useSelectionController = defineStore('notice', () => {
   const query = ref('')
-  const history = ref([])
+  const history = useStorage('history-v1', [])
   const error = ref(null)
   const isLoading = ref(false)
   const results = ref(false)
@@ -28,7 +29,7 @@ export const useSelectionController = defineStore('notice', () => {
   const executeCurrentQuery = async () => {
     try {
       isLoading.value = true
-
+      results.value = undefined
       error.value = null
 
       const dataset = await executeQuery(query.value)
@@ -91,7 +92,7 @@ export const useSelectionController = defineStore('notice', () => {
   })
 
   const selectedHistoryIndex = computed(() =>
-    history.value.findIndex(item => item.queryStr === query.value)
+    history.value.findIndex(item => item.queryStr === query.value),
   )
 
   return {

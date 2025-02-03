@@ -9,14 +9,20 @@ import SparqlEditor from './Editor.vue'
 import { useSelectionController } from './controllers/selectionController.js'
 
 const selectionController = useSelectionController()
-const { query, history,selectedHistoryIndex,  error, isLoading, results } = storeToRefs(selectionController)
+const { query, history, selectedHistoryIndex, error, isLoading, results } = storeToRefs(selectionController)
 
 onMounted(() => {
-  selectionController.selectNoticeByPublicationNumber(getRandomPublicationNumber())
+
+  if (history.value.length === 0) {
+    selectionController.selectNoticeByPublicationNumber(getRandomPublicationNumber())
+  } else {
+    selectionController.selectHistoryItem(0)
+  }
+
 })
 
-function getHistoryItemType(index) {
-  return selectedHistoryIndex.value === index?'info':'default'
+function getHistoryItemType (index) {
+  return selectedHistoryIndex.value === index ? 'info' : 'default'
 }
 
 </script>
@@ -47,7 +53,9 @@ function getHistoryItemType(index) {
       <template v-if="results?.extracted" v-for="procedureId of results.extracted.procedureIds">
         <Procedure :procedureId="procedureId" :publicationNumbers="results.extracted.publicationNumbers"/>
       </template>
-      <template v-if="results?.stats">{{ results?.stats }}</template>
+      <template v-if="results?.stats">
+        {{ results?.stats }}
+      </template>
 
       <div v-if="results?.entities" class="entity-container">
         <EntityList :entities="results?.entities"/>
