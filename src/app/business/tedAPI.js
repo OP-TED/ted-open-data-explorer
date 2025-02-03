@@ -27,6 +27,7 @@ function mapResponse (tedResponse) {
       xml: xmlLink,
       html: htmlLink,
       nextVersion: notice['next-version'],
+      changeNoticeVersionIdentifier: notice['change-notice-version-identifier'],
       publicationNumber: notice['publication-number'],
       publicationDate: notice['publication-date'],
       procedureId: notice['procedure-identifier'],
