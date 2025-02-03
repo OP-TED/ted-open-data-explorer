@@ -1,4 +1,5 @@
 <script setup>
+import { lineNumberMarkers } from '@codemirror/view'
 import { computed } from 'vue'
 import { mapResponse, procedureAPIUrl, apiURL } from './tedAPI.js'
 import { useFetch } from '@vueuse/core'
@@ -35,6 +36,14 @@ function contained (publicationNumber) {
   return numbers.has(normalize(publicationNumber))
 }
 
+function timelineItemType(notice) {
+  return notice.changeNoticeVersionIdentifier?'warning':'success'
+}
+
+function timelineLineType(notice) {
+  return notice.nextVersion?'dashed':'default'
+}
+
 </script>
 
 <template>
@@ -46,10 +55,11 @@ function contained (publicationNumber) {
       <n-timeline horizontal>
         <template v-for="notice of notices">
           <n-timeline-item
-              :type="`${notice.nextVersion?'warning':'success'}`"
+              :type="timelineItemType(notice)"
               :title="notice.publicationNumber"
               :content="`${notice.noticeType.value} - ${notice.formType.value}`"
               :time="notice.publicationDate"
+              :line-type="timelineLineType(notice)"
               class="timeline-item"
               @click="select(notice.publicationNumber)"
           >
