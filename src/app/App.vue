@@ -9,11 +9,16 @@ import SparqlEditor from './Editor.vue'
 import { useSelectionController } from './controllers/selectionController.js'
 
 const selectionController = useSelectionController()
-const { query, history, error, isLoading, results } = storeToRefs(selectionController)
+const { query, history,selectedHistoryIndex,  error, isLoading, results } = storeToRefs(selectionController)
 
 onMounted(() => {
   selectionController.selectNoticeByPublicationNumber(getRandomPublicationNumber())
 })
+
+function getHistoryItemType(index) {
+  return selectedHistoryIndex.value === index?'info':'default'
+}
+
 </script>
 
 <template>
@@ -28,7 +33,7 @@ onMounted(() => {
             v-for="(item, index) in history"
             :key="index"
             class="history-item"
-            type="info"
+            :type="getHistoryItemType(index)"
             closable
             :trigger-click-on-close="false"
             @click="selectionController.selectHistoryItem(index)"

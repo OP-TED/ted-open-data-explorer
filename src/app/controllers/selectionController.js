@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, shallowReadonly, watch } from 'vue'
+import { computed, ref, shallowReadonly, shallowRef, watch } from 'vue'
 import { getEntities } from '../../traversers/entities.js'
 import { extractEntities } from '../business/extractEntities.js'
 import { executeQuery } from '../../services/doQuery.js'
@@ -24,7 +24,6 @@ export const useSelectionController = defineStore('notice', () => {
   const error = ref(null)
   const isLoading = ref(false)
   const results = ref(false)
-  const currentDataset = shallowReadonly(undefined)
 
   const executeCurrentQuery = async () => {
     try {
@@ -34,7 +33,6 @@ export const useSelectionController = defineStore('notice', () => {
 
       const dataset = await executeQuery(query.value)
 
-      currentDataset.value = dataset
       const entities = getEntities(dataset, defaultOptions)
 
       const extracted = extractEntities({ dataset })
@@ -77,15 +75,12 @@ export const useSelectionController = defineStore('notice', () => {
   }
 
   const selectNamed = (term, termLabel) => {
-    doTermQuery(describeWithPragma(term), term, termLabel)
-  }
-
-  const doTermQuery = (newQuery, term, termLabel) => {
+    const query = describeWithPragma(term)
     const label = termLabel.prefix
       ? `${termLabel.prefix}:${termLabel.display}`
       : termLabel.display
-    addToHistory(label, newQuery)
-    setQuery(newQuery)
+    addToHistory(label, query)
+    setQuery(query)
   }
 
   // Watch for query changes and execute
@@ -95,6 +90,10 @@ export const useSelectionController = defineStore('notice', () => {
     }
   })
 
+  const selectedHistoryIndex = computed(() =>
+    history.value.findIndex(item => item.queryStr === query.value)
+  )
+
   return {
     query,
     error,
@@ -103,7 +102,7 @@ export const useSelectionController = defineStore('notice', () => {
     setQuery,
     selectNoticeByPublicationNumber,
     selectNamed,
-
+    selectedHistoryIndex,
     history,
     selectHistoryItem,
     removeHistoryItem,
