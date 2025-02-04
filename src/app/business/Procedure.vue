@@ -1,5 +1,4 @@
 <script setup>
-import { lineNumberMarkers } from '@codemirror/view'
 import { computed } from 'vue'
 import { mapResponse, procedureAPIUrl, apiURL } from './tedAPI.js'
 import { useFetch } from '@vueuse/core'
@@ -29,29 +28,33 @@ function select (publicationNumber) {
 }
 
 // Publication numbers sometimes have zeroes, sometimes they don't
-const normalize = (number) => number.startsWith('00') ? number : `00${number}`
+const normalize = (number) =>
+    number.startsWith('00') ? number : `00${number}`
 
 function contained (publicationNumber) {
   const numbers = new Set(props.publicationNumbers.map(normalize))
   return numbers.has(normalize(publicationNumber))
 }
 
-function timelineItemType(notice) {
-  return notice.changeNoticeVersionIdentifier?'warning':'success'
+function timelineItemType (notice) {
+  return notice.changeNoticeVersionIdentifier ? 'warning' : 'success'
 }
 
-function timelineLineType(notice) {
-  return notice.nextVersion?'dashed':'default'
+function timelineLineType (notice) {
+  return notice.nextVersion ? 'dashed' : 'default'
 }
-
 </script>
 
 <template>
   <div v-if="isFetching">Fetching data...</div>
   <div v-else-if="error">Error: {{ error }}</div>
-  <div v-else-if="data">
-    <div v-if="procedureId">Procedure ID: <a :href="procedureClickableUrl">{{ procedureId }}</a></div>
-    <div style="overflow: auto">
+  <div class="timeline" v-else-if="data">
+    <div v-if="procedureId">
+      <div> Procedure ID:</div>
+
+      <a :href="procedureClickableUrl">{{ procedureId }}</a>
+    </div>
+    <div>
       <n-timeline horizontal>
         <template v-for="notice of notices">
           <n-timeline-item
@@ -64,14 +67,14 @@ function timelineLineType(notice) {
               @click="select(notice.publicationNumber)"
           >
             <template #header>
-              <h3 v-if="contained(notice.publicationNumber)">{{ notice.publicationNumber }}</h3>
+              <h3 v-if="contained(notice.publicationNumber)">
+                {{ notice.publicationNumber }}
+              </h3>
             </template>
             <template #footer>
-              <a :href="notice.html">{{ notice.publicationNumber }}</a>
+              <a :href="notice.html" target="_blank" rel="noopener noreferrer">html</a>
             </template>
-
           </n-timeline-item>
-
         </template>
       </n-timeline>
     </div>
@@ -82,11 +85,11 @@ function timelineLineType(notice) {
 <style scoped>
 .timeline-item {
   cursor: pointer;
-  transition: transform 0.2s ease;
 }
 
-.timeline-item:hover {
-  transform: translateY(-2px);
+.timeline {
+  display: flex;
+  gap: 30px;
+  padding-left: 30px;
 }
-
 </style>
