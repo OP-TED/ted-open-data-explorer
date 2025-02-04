@@ -6,7 +6,6 @@
     .yasgui .controlbar {
         display: none !important;
     }
-
     .yasgui .tabsList {
         display: none !important;
     }
@@ -15,12 +14,9 @@
 <body>
 <div id="yasgui"></div>
 <script>
-
   const yasgui = new Yasgui(document.getElementById('yasgui'), {
     requestConfig: { endpoint: 'https://publications.europa.eu/webapi/rdf/sparql' },
     copyEndpointOnNewTab: false,
   })
-
-
 </script>
 </body>
