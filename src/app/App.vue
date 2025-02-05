@@ -28,7 +28,7 @@ onMounted(() => {
 function doSparql (query) {
   selectionController.searchFacet({
     type: 'query',
-    value: query,
+    query,
   })
 }
 

@@ -38,9 +38,11 @@ const termLabel = computed(() => {
 
 const controller = useSelectionController()
 
-
 function select (term, termLabel) {
-  controller.selectNamed(term, termLabel)
+  controller.searchFacet({
+    type: 'named-node',
+    term,
+  })
 }
 
 </script>

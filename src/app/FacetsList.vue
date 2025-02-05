@@ -8,7 +8,7 @@ import { storeToRefs } from 'pinia'
 import { useSelectionController } from './controllers/selectionController.js'
 
 const selectionController = useSelectionController()
-const { history, selectedHistoryIndex, results } =
+const { facetsList, selectedHistoryIndex, results } =
     storeToRefs(selectionController)
 
 function getHistoryItemType (index) {
@@ -20,20 +20,20 @@ function getHistoryItemType (index) {
 <template>
   <n-space style="margin: 10px 0">
     <n-tag
-        v-for="(item, index) in history"
+        v-for="(facet, index) in facetsList"
         :key="index"
         class="history-item"
         :type="getHistoryItemType(index)"
         closable
         :trigger-click-on-close="false"
-        @click="selectionController.selectHistoryItem(index)"
-        @close="selectionController.removeHistoryItem(index)"
+        @click="selectionController.selectFacetByIndex(index)"
+        @close="selectionController.removeFacetByIndex(index)"
     >
       <template v-if="index===selectedHistoryIndex">
-        {{ item.label }} ({{ results?.stats?.triples }} triples)
+        {{ facet.label }} ({{ results?.stats?.triples }} triples)
       </template>
       <template v-else>
-        {{ item.label }}
+        {{ facet.label }}
       </template>
     </n-tag>
   </n-space>

@@ -21,7 +21,7 @@ export const useSelectionController = defineStore('notice', () => {
   const error = ref(null)
   const isLoading = ref(false)
   const results = ref(false)
-  const history = useStorage('facets-v1', [])
+  const facetsList = useStorage('facets-v1', [])
   const currentQuery = ref()
 
   async function executeQuery (query) {
@@ -47,35 +47,40 @@ export const useSelectionController = defineStore('notice', () => {
     }
   }
 
-  const addToHistory = (label, queryStr) => {
-    const exists = history.value.some((item) => item.queryStr === queryStr)
+  const addFacetToList = (facet) => {
+    const exists = facetsList.value.some((item) => item.query === facet.query)
     if (!exists) {
-      history.value.push({ label, queryStr })
+      facetsList.value.push(facet)
     }
   }
 
-  const removeHistoryItem = (index) => {
-    // If removing currently selected item
-    if (index === selectedHistoryIndex.value) {
-      // Clear current results
+  async function removeFacetByIndex (index) {
+    if (index === selectedFacetIndex.value) {
       results.value = undefined
-
-      // Remove the item
-      history.value.splice(index, 1)
+      facetsList.value.splice(index, 1)
 
       // If there are remaining items, select the previous item
       // (or the first item if removing first element)
-      if (history.value.length > 0) {
+      if (facetsList.value.length > 0) {
         const newIndex = index > 0 ? index - 1 : 0
-        currentQuery.value = history.value[newIndex].queryStr
+        await selectFacetByIndex(newIndex)
       } else {
         // If no items left, clear the query
         currentQuery.value = ''
       }
     } else {
       // If removing an unselected item, just remove it
-      history.value.splice(index, 1)
+      facetsList.value.splice(index, 1)
     }
+  }
+
+  const selectedFacetIndex = computed(
+    () => facetsList.value.findIndex(
+      (item) => item.query === currentQuery.value))
+
+  async function selectFacetByIndex (index) {
+    const query = facetsList.value[index].query
+    await executeQuery(query)
   }
 
   function maybeResourceLabel (url) {
@@ -86,41 +91,41 @@ export const useSelectionController = defineStore('notice', () => {
     return url
   }
 
-  async function selectNamed (term, termLabel) {
-    const query = describeWithPragma(term)
-    const label = termLabel.prefix
-      ? `${termLabel.prefix}:${termLabel.display}`
-      : termLabel.display
-    addToHistory(maybeResourceLabel(label), query)
-    await executeQuery(query)
+  function shrink (term) {
+    for (const [prefix, namespace] of Object.entries({ ...ns })) {
+      const startURL = namespace().value
+      if (term.value.startsWith(startURL)) {
+        return `${prefix}:${value.replaceAll(startURL, '')}`
+      }
+    }
   }
 
-  async function selectHistoryItem (index) {
-    const query = history.value[index].queryStr
-    await executeQuery(query)
-  }
-
-  async function selectByQuery (query) {
-    addToHistory('Query', query)
-    await executeQuery(query)
+  function termLabel (term) {
+    if (term.value.startsWith('http://data.europa.eu/a4g/resource/')) {
+      const parts = term.value.split('_')
+      return 'Resource: ' + parts.slice(-2).join('_')
+    }
+    return shrink(term)
   }
 
   async function searchFacet (facet) {
-    const { type, value } = facet
+    const { type, value, query, term } = facet
     if (type === 'query') {
-      addToHistory('Query', value)
+      const label = 'Query'
+      addFacetToList({ ...facet, label, query })
       await executeQuery(value)
     } else if (type === 'notice-number') {
-      const queryStr = getNoticeByPublicationNumber(value)
-      addToHistory(`Notice ${value}`, queryStr)
-      await executeQuery(queryStr)
+      const query = getNoticeByPublicationNumber(value)
+      const label = `Notice ${value}`
+      addFacetToList({ ...facet, label, query })
+      await executeQuery(query)
+    } else if (type === 'named-node') {
+      const label = termLabel(term)
+      const query = describeWithPragma(term)
+      addFacetToList({ ...facet, label, query })
+      await executeQuery(query)
     }
-
   }
-
-  const selectedHistoryIndex = computed(
-    () => history.value.findIndex(
-      (item) => item.queryStr === currentQuery.value))
 
   return {
     currentQuery,
@@ -128,10 +133,9 @@ export const useSelectionController = defineStore('notice', () => {
     error,
     isLoading,
     results,
-    selectNamed,
-    selectedHistoryIndex,
-    history,
-    selectHistoryItem,
-    removeHistoryItem,
+    selectedHistoryIndex: selectedFacetIndex,
+    facetsList,
+    selectFacetByIndex,
+    removeFacetByIndex,
   }
 })
