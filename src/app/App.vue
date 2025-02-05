@@ -17,13 +17,7 @@ import SparqlEditor from './Editor.vue'
 import { useSelectionController } from './controllers/selectionController.js'
 
 const selectionController = useSelectionController()
-const { currentQuery, history, error, isLoading, results } = storeToRefs(selectionController)
-
-onMounted(() => {
-  if (history.value.length > 0) {
-    selectionController.selectHistoryItem(0)
-  }
-})
+const { currentQuery, error, isLoading, results } = storeToRefs(selectionController)
 
 function doSparql (query) {
   selectionController.searchFacet({

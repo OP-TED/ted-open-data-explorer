@@ -1,13 +1,12 @@
 import { defineStore } from 'pinia'
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { getEntities } from '../../traversers/entities.js'
 import { extractEntities } from '../business/extractEntities.js'
 import { doSPARQL } from '../../services/doQuery.js'
-import getNoticeByPublicationNumber
-  from '../../queries/getNoticeByPublicationNumber.js'
-import { describeWithPragma } from '../../queries/getTermDescriptionQuery.js'
+
 import { ns } from '../../namespaces.js'
 import { useStorage } from '@vueuse/core'
+import { getLabel, getQuery } from './facets.js'
 
 const defaultOptions = {
   ignoreNamedGraphs: true, matchers: [
@@ -47,84 +46,47 @@ export const useSelectionController = defineStore('notice', () => {
     }
   }
 
-  const addFacetToList = (facet) => {
-    const exists = facetsList.value.some((item) => item.query === facet.query)
-    if (!exists) {
-      facetsList.value.push(facet)
-    }
-  }
-
   async function removeFacetByIndex (index) {
-    if (index === selectedFacetIndex.value) {
-      results.value = undefined
-      facetsList.value.splice(index, 1)
+    const isSelected = index === selectedFacetIndex.value
 
-      // If there are remaining items, select the previous item
-      // (or the first item if removing first element)
-      if (facetsList.value.length > 0) {
-        const newIndex = index > 0 ? index - 1 : 0
-        await selectFacetByIndex(newIndex)
-      } else {
-        // If no items left, clear the query
-        currentQuery.value = ''
-      }
+    // Remove the facet
+    facetsList.value.splice(index, 1)
+
+    if (!isSelected) return
+
+    results.value = undefined
+
+    if (facetsList.value.length > 0) {
+      const newIndex = Math.max(0, index - 1) // Select previous facet if possible
+      await selectFacetByIndex(newIndex)
     } else {
-      // If removing an unselected item, just remove it
-      facetsList.value.splice(index, 1)
+      currentQuery.value = ''
     }
   }
 
   const selectedFacetIndex = computed(
     () => facetsList.value.findIndex(
-      (item) => item.query === currentQuery.value))
+      (facet) => getQuery(facet) === currentQuery.value))
 
-  async function selectFacetByIndex (index) {
-    const query = facetsList.value[index].query
+  async function executeFacetQuery (facet) {
+    const query = getQuery(facet)
     await executeQuery(query)
   }
 
-  function maybeResourceLabel (url) {
-    if (url.startsWith('http://data.europa.eu/a4g/resource/')) {
-      const parts = url.split('_')
-      return 'Resource: ' + parts.slice(-2).join('_')
-    }
-    return url
-  }
-
-  function shrink (term) {
-    for (const [prefix, namespace] of Object.entries({ ...ns })) {
-      const startURL = namespace().value
-      if (term.value.startsWith(startURL)) {
-        return `${prefix}:${value.replaceAll(startURL, '')}`
-      }
+  function addFacetIfMissing (facet) {
+    if (!facetsList.value.some(item => getQuery(item) === getQuery(facet))) {
+      facetsList.value.push(facet)
     }
   }
 
-  function termLabel (term) {
-    if (term.value.startsWith('http://data.europa.eu/a4g/resource/')) {
-      const parts = term.value.split('_')
-      return 'Resource: ' + parts.slice(-2).join('_')
-    }
-    return shrink(term)
+  async function selectFacetByIndex (index) {
+    const facet = facetsList.value[index]
+    await executeFacetQuery(facet)
   }
 
   async function searchFacet (facet) {
-    const { type, value, query, term } = facet
-    if (type === 'query') {
-      const label = 'Query'
-      addFacetToList({ ...facet, label, query })
-      await executeQuery(value)
-    } else if (type === 'notice-number') {
-      const query = getNoticeByPublicationNumber(value)
-      const label = `Notice ${value}`
-      addFacetToList({ ...facet, label, query })
-      await executeQuery(query)
-    } else if (type === 'named-node') {
-      const label = termLabel(term)
-      const query = describeWithPragma(term)
-      addFacetToList({ ...facet, label, query })
-      await executeQuery(query)
-    }
+    addFacetIfMissing({ ...facet, label: getLabel(facet) })
+    await executeFacetQuery(facet)
   }
 
   return {

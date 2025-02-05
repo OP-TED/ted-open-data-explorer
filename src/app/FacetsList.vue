@@ -4,6 +4,7 @@ import {
   NTag,
 } from 'naive-ui'
 import { storeToRefs } from 'pinia'
+import { onMounted } from 'vue'
 
 import { useSelectionController } from './controllers/selectionController.js'
 
@@ -14,6 +15,13 @@ const { facetsList, selectedHistoryIndex, results } =
 function getHistoryItemType (index) {
   return selectedHistoryIndex.value === index ? 'info' : 'default'
 }
+
+onMounted(() => {
+  if (facetsList.value.length > 0) {
+    selectionController.selectFacetByIndex(0)
+  }
+})
+
 
 </script>
 
