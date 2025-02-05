@@ -3,7 +3,7 @@ import rdf from 'rdf-ext'
 
 const sparqlEndpoint = import.meta.env.VITE_SPARQL_ENDPOINT
 
-export async function executeQuery (query) {
+export async function doSPARQL (query) {
   const headers = new Headers({
     Accept: 'text/turtle',
     'Content-Type': 'application/x-www-form-urlencoded',

@@ -1,10 +1,8 @@
 <script setup>
 import {
-
   NSpace,
   NInput,
   NButton,
-
 } from 'naive-ui'
 import { ref } from 'vue'
 import { getRandomPublicationNumber } from './business/examples.js'
@@ -14,17 +12,18 @@ const selectionController = useSelectionController()
 
 const noticeNumber = ref('')
 
-function handleSearchByNoticeNumber () {
+function searchByNoticeNumber () {
   if (noticeNumber.value.trim()) {
-    selectionController.selectNoticeByPublicationNumber(
-        noticeNumber.value.trim(),
-    )
+    selectionController.searchFacet({
+      type: 'notice-number',
+      value: noticeNumber.value.trim(),
+    })
   }
 }
 
 function handleSelectRandom () {
   noticeNumber.value = getRandomPublicationNumber()
-  selectionController.selectNoticeByPublicationNumber(noticeNumber.value)
+  searchByNoticeNumber()
 }
 
 </script>
@@ -34,10 +33,10 @@ function handleSelectRandom () {
     <n-input
         v-model:value="noticeNumber"
         placeholder="Enter notice number"
-        @keyup.enter="handleSearchByNoticeNumber"
+        @keyup.enter="searchByNoticeNumber"
     >
     </n-input>
-    <n-button secondary @click="handleSearchByNoticeNumber"> Search</n-button>
+    <n-button secondary @click="searchByNoticeNumber"> Search</n-button>
     <n-button @click="handleSelectRandom" secondary size="tiny">
       Random
     </n-button>

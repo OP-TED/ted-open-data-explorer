@@ -4,9 +4,9 @@ import {
   NConfigProvider,
   NSpace,
   NCollapseItem,
-  NCollapse,
+  NCollapse, NButton,
 } from 'naive-ui'
-import { onMounted } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import Procedure from './business/Procedure.vue'
 import EntityList from './components/EntityList.vue'
@@ -17,7 +17,7 @@ import SparqlEditor from './Editor.vue'
 import { useSelectionController } from './controllers/selectionController.js'
 
 const selectionController = useSelectionController()
-const { query, history, error, isLoading, results } = storeToRefs(selectionController)
+const { currentQuery, history, error, isLoading, results } = storeToRefs(selectionController)
 
 onMounted(() => {
   if (history.value.length > 0) {
@@ -25,6 +25,17 @@ onMounted(() => {
   }
 })
 
+function doSparql (query) {
+  selectionController.searchFacet({
+    type: 'query',
+    value: query,
+  })
+}
+
+const editorQuery = ref('')
+watch(currentQuery, async (newQuery, oldQuery) => {
+  editorQuery.value = newQuery
+})
 
 </script>
 
@@ -45,9 +56,13 @@ onMounted(() => {
                         "
           >
             <sparql-editor
-                v-model="query"
+                v-model="editorQuery"
                 :isLoading="isLoading"
             ></sparql-editor>
+            <n-button @click="doSparql(editorQuery)" :loading="isLoading" class="editor-button">
+              Execute Query
+            </n-button>
+
           </div>
         </n-collapse-item>
       </n-collapse>
@@ -84,6 +99,9 @@ onMounted(() => {
 </template>
 
 <style>
+.editor-button {
+  margin-top: 8px;
+}
 
 .entity-container {
   background-color: white;
