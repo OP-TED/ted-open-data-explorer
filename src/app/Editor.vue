@@ -1,5 +1,4 @@
 <script setup>
-import { NButton } from 'naive-ui'
 import { onMounted, ref, watch } from 'vue'
 import { basicSetup } from 'codemirror'
 import { EditorView } from '@codemirror/view'
@@ -20,15 +19,7 @@ const editorContainer = ref(null)
 
 let editor = null
 
-function doExecuteQuery () {
-  emit('update:modelValue', currentQuery.value)
-}
-
-const currentQuery = ref()
-
 onMounted(() => {
-
-  currentQuery.value = props.modelValue
 
   editor = new EditorView({
     state: EditorState.create({
@@ -38,8 +29,8 @@ onMounted(() => {
         sparql(),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
-            currentQuery.value = update.state.doc.toString()
-            // emit('update:modelValue', update.state.doc.toString())
+            // currentQuery.value = update.state.doc.toString()
+            emit('update:modelValue', update.state.doc.toString())
           }
         }),
       ],
@@ -59,7 +50,6 @@ watch(() => props.modelValue, (newValue) => {
 
 <template>
   <div ref="editorContainer" class="cm-editor"></div>
-  <n-button @click="doExecuteQuery" :loading="isLoading" class="editor-button">Execute Query</n-button>
 </template>
 
 <style scoped>
@@ -69,7 +59,5 @@ watch(() => props.modelValue, (newValue) => {
   font-family: monospace;
   border: 1px solid #ddd;
 }
-.editor-button {
-  margin-top: 8px;
-}
+
 </style>

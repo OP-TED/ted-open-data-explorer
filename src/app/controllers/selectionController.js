@@ -1,50 +1,44 @@
 import { defineStore } from 'pinia'
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { getEntities } from '../../traversers/entities.js'
 import { extractEntities } from '../business/extractEntities.js'
-import { executeQuery } from '../../services/doQuery.js'
-import getNoticeByPublicationNumber
-  from '../../queries/getNoticeByPublicationNumber.js'
-import { describeWithPragma } from '../../queries/getTermDescriptionQuery.js'
+import { doSPARQL } from '../../services/doQuery.js'
+
 import { ns } from '../../namespaces.js'
 import { useStorage } from '@vueuse/core'
+import { getQuery } from '../../facets/facets.js'
 
 const defaultOptions = {
-  ignoreNamedGraphs: true,
-  matchers: [
+  ignoreNamedGraphs: true, matchers: [
     { predicate: ns.rdf.type, object: ns.epo.ChangeInformation },
     { predicate: ns.rdf.type, object: ns.epo.ResultNotice },
     { predicate: ns.rdf.type, object: ns.epo.Notice },
-    {},
-  ],
+    {}],
 }
 
 export const useSelectionController = defineStore('notice', () => {
-  const query = ref('')
-  const history = useStorage('history-v1', [])
   const error = ref(null)
   const isLoading = ref(false)
   const results = ref(false)
+  const facetsList = useStorage('facets-v2', [])
+  const currentQuery = ref()
 
-  const executeCurrentQuery = async () => {
+  async function executeQuery (query) {
     try {
       isLoading.value = true
       results.value = undefined
       error.value = null
 
-      const dataset = await executeQuery(query.value)
-
+      const dataset = await doSPARQL(query)
       const entities = getEntities(dataset, defaultOptions)
-
       const extracted = extractEntities({ dataset })
       const stats = {
         triples: dataset.size,
       }
       results.value = {
-        entities,
-        extracted,
-        stats,
+        entities, extracted, stats,
       }
+      currentQuery.value = query
     } catch (e) {
       error.value = e
     } finally {
@@ -52,87 +46,53 @@ export const useSelectionController = defineStore('notice', () => {
     }
   }
 
-  const setQuery = (queryStr) => {
-    query.value = queryStr
-  }
-  const addToHistory = (label, queryStr) => {
-    const exists = history.value.some((item) => item.queryStr === queryStr)
-    if (!exists) {
-      history.value.push({ label, queryStr })
-    }
-  }
-  const selectHistoryItem = (index) => {
-    query.value = history.value[index].queryStr
-  }
-  const removeHistoryItem = (index) => {
-    // If removing currently selected item
-    if (index === selectedHistoryIndex.value) {
-      // Clear current results
-      results.value = undefined
+  async function removeFacetByIndex (index) {
+    const isSelected = index === selectedFacetIndex.value
 
-      // Remove the item
-      history.value.splice(index, 1)
+    // Remove the facet
+    facetsList.value.splice(index, 1)
 
-      // If there are remaining items, select the previous item
-      // (or the first item if removing first element)
-      if (history.value.length > 0) {
-        const newIndex = index > 0 ? index - 1 : 0
-        query.value = history.value[newIndex].queryStr
-      } else {
-        // If no items left, clear the query
-        query.value = ''
-      }
+    if (!isSelected) return
+
+    results.value = undefined
+
+    if (facetsList.value.length > 0) {
+      const newIndex = Math.max(0, index - 1) // Select previous facet if possible
+      await selectFacetByIndex(newIndex)
     } else {
-      // If removing an unselected item, just remove it
-      history.value.splice(index, 1)
+      currentQuery.value = ''
     }
   }
 
-  const selectNoticeByPublicationNumber = (publicationNumber) => {
-    const queryStr = getNoticeByPublicationNumber(publicationNumber)
-    addToHistory(`Notice ${publicationNumber}`, queryStr)
-    setQuery(queryStr)
-  }
+  const selectedFacetIndex = computed(
+    () => facetsList.value.findIndex(
+      (facet) => getQuery(facet) === currentQuery.value))
 
-  function maybeResourceLabel (url) {
-    if (url.startsWith('http://data.europa.eu/a4g/resource/')) {
-      const parts = url.split('_')
-      return 'Resource: ' + parts.slice(-2).join('_')
+  function addFacetIfMissing (facet) {
+    if (!facetsList.value.some(item => getQuery(item) === getQuery(facet))) {
+      facetsList.value.push(facet)
     }
-    return url
   }
 
-  const selectNamed = async (term, termLabel) => {
-    const query = describeWithPragma(term)
-    const label = termLabel.prefix
-      ? `${termLabel.prefix}:${termLabel.display}`
-      : termLabel.display
-    addToHistory(maybeResourceLabel(label), query)
-    setQuery(query)
+  async function selectFacetByIndex (index) {
+    const facet = facetsList.value[index]
+    await executeQuery(getQuery(facet))
   }
 
-  // Watch for query changes and execute
-  watch(query, (newQuery) => {
-    if (newQuery) {
-      executeCurrentQuery()
-    }
-  })
-
-  const selectedHistoryIndex = computed(() =>
-    history.value.findIndex((item) => item.queryStr === query.value),
-  )
+  async function selectFacet (facet) {
+    addFacetIfMissing(facet)
+    await executeQuery(getQuery(facet))
+  }
 
   return {
-    query,
+    currentQuery,
+    selectFacet,
     error,
     isLoading,
     results,
-    setQuery,
-    selectNoticeByPublicationNumber,
-    selectNamed,
-    selectedHistoryIndex,
-    history,
-    selectHistoryItem,
-    removeHistoryItem,
+    selectedHistoryIndex: selectedFacetIndex,
+    facetsList,
+    selectFacetByIndex,
+    removeFacetByIndex,
   }
 })

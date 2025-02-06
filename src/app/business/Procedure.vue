@@ -24,7 +24,10 @@ const notices = computed(() => {
 })
 
 function select (publicationNumber) {
-  controller.selectNoticeByPublicationNumber(publicationNumber)
+  controller.selectFacet({
+    type: 'notice-number',
+    value: publicationNumber,
+  })
 }
 
 // Publication numbers sometimes have zeroes, sometimes they don't
