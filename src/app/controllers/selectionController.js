@@ -20,7 +20,7 @@ export const useSelectionController = defineStore('notice', () => {
   const error = ref(null)
   const isLoading = ref(false)
   const results = ref(false)
-  const facetsList = useStorage('facets-v1', [])
+  const facetsList = useStorage('facets-v2', [])
   const currentQuery = ref()
 
   async function executeQuery (query) {
