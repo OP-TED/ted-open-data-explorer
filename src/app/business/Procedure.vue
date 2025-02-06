@@ -24,7 +24,7 @@ const notices = computed(() => {
 })
 
 function select (publicationNumber) {
-  controller.searchFacet({
+  controller.selectFacet({
     type: 'notice-number',
     value: publicationNumber,
   })

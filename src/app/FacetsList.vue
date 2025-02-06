@@ -5,6 +5,7 @@ import {
 } from 'naive-ui'
 import { storeToRefs } from 'pinia'
 import { onMounted } from 'vue'
+import { getLabel } from './controllers/facets.js'
 
 import { useSelectionController } from './controllers/selectionController.js'
 
@@ -37,12 +38,11 @@ onMounted(() => {
         @click="selectionController.selectFacetByIndex(index)"
         @close="selectionController.removeFacetByIndex(index)"
     >
+      {{ getLabel(facet) }}
       <template v-if="index===selectedHistoryIndex">
-        {{ facet.label }} ({{ results?.stats?.triples }} triples)
+        ({{ results?.stats?.triples }} triples)
       </template>
-      <template v-else>
-        {{ facet.label }}
-      </template>
+
     </n-tag>
   </n-space>
 

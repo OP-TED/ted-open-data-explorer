@@ -20,7 +20,7 @@ const selectionController = useSelectionController()
 const { currentQuery, error, isLoading, results } = storeToRefs(selectionController)
 
 function doSparql (query) {
-  selectionController.searchFacet({
+  selectionController.selectFacet({
     type: 'query',
     query,
   })

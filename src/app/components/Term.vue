@@ -38,8 +38,8 @@ const termLabel = computed(() => {
 
 const controller = useSelectionController()
 
-function select (term, termLabel) {
-  controller.searchFacet({
+function selectNamed (term) {
+  controller.selectFacet({
     type: 'named-node',
     term,
   })
@@ -54,8 +54,8 @@ function select (term, termLabel) {
     </span>
 
     <template v-if="termLabel">
-      <a href="#" @click="select(term, termLabel)"><span v-if="termLabel.prefix"
-                                                         class="vocab"> {{
+      <a href="#" @click="selectNamed(term)"><span v-if="termLabel.prefix"
+                                                   class="vocab"> {{
           termLabel.prefix
         }}</span>{{ termLabel.display }}</a>
     </template>
