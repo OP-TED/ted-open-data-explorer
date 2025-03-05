@@ -1,12 +1,12 @@
+import { useStorage } from '@vueuse/core'
 import { defineStore } from 'pinia'
-import { computed, ref } from 'vue'
-import { getEntities } from '../../traversers/entities.js'
-import { extractEntities } from '../business/extractEntities.js'
-import { doSPARQL } from '../../services/doQuery.js'
+import { computed, ref, watch } from 'vue'
+import { getQuery } from '../../facets/facets.js'
 
 import { ns } from '../../namespaces.js'
-import { useStorage } from '@vueuse/core'
-import { getQuery } from '../../facets/facets.js'
+import { doSPARQL } from '../../services/doQuery.js'
+import { getEntities } from '../../traversers/entities.js'
+import { extractEntities } from '../business/extractEntities.js'
 
 const defaultOptions = {
   ignoreNamedGraphs: true, matchers: [
@@ -26,47 +26,53 @@ export const useSelectionController = defineStore('notice', () => {
   const currentFacet = computed(
     () => facetsList.value[currentFacetIndex.value] || null)
 
-  function addFacet(facet) {
-    const existingIndex = facetsList.value.findIndex((item) => getQuery(item) === getQuery(facet));
+  function addFacet (facet) {
+    const existingIndex = facetsList.value.findIndex(
+      (item) => getQuery(item) === getQuery(facet))
     if (existingIndex !== -1) {
-      return existingIndex;
+      return existingIndex
     }
-    facetsList.value.push(facet);
-    return facetsList.value.length - 1;
+    facetsList.value.push(facet)
+    return facetsList.value.length - 1
   }
 
   async function removeFacet (index) {
-
     const isSelected = index === currentFacetIndex.value
 
     facetsList.value.splice(index, 1)
 
-    if (!isSelected) return
-
-    if (facetsList.value.length > 0) {
-      const newIndex = Math.max(0, index - 1) // Select previous facet if possible
-      await selectFacet(newIndex)
+    if (isSelected) {
+      if (facetsList.value.length > 0) {
+        const newIndex = Math.max(0, index - 1) // Select previous facet if possible
+        await selectFacet(newIndex)
+      } else {
+        results.value = null
+        currentFacetIndex.value = null
+      }
+    } else if (index < currentFacetIndex.value) {
+      currentFacetIndex.value--
     }
-    results.value = null
   }
 
   async function selectFacet (facetOrIndex) {
-
-    console.log('selectFacet', facetOrIndex)
-
-    const index = typeof facetOrIndex === 'number' ? facetOrIndex : addFacet(
-      facetOrIndex)
-    currentFacetIndex.value = index
-    await executeQuery(facetsList.value[index])
+    currentFacetIndex.value = typeof facetOrIndex === 'number'
+      ? facetOrIndex
+      : addFacet(
+        facetOrIndex)
   }
 
-  async function executeQuery (facet) {
+  watch(currentFacet, async (newVal, oldVal) => {
+    const newQuery = getQuery(newVal)
+    await executeQuery(newQuery)
+  })
+
+  async function executeQuery (query) {
     try {
       isLoading.value = true
       error.value = null
       results.value = null
 
-      const dataset = await doSPARQL(getQuery(facet))
+      const dataset = await doSPARQL(query)
       results.value = {
         entities: getEntities(dataset, defaultOptions),
         extracted: extractEntities({ dataset }),
