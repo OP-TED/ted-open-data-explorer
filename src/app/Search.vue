@@ -14,7 +14,7 @@ const noticeNumber = ref('')
 
 function searchByNoticeNumber () {
   if (noticeNumber.value.trim()) {
-    selectionController.searchFacet({
+    selectionController.selectFacet({
       type: 'notice-number',
       value: noticeNumber.value.trim(),
     })

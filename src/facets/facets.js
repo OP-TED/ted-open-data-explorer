@@ -1,7 +1,7 @@
 import { ns } from '../namespaces.js'
 import getNoticeByPublicationNumber
-  from '../queries/getNoticeByPublicationNumber.js'
-import { describeWithPragma } from '../queries/getTermDescriptionQuery.js'
+  from './getNoticeByPublicationNumber.js'
+import { describeWithPragma } from './getTermDescriptionQuery.js'
 
 function shrink (termStr) {
   for (const [prefix, namespace] of Object.entries({ ...ns })) {

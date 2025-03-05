@@ -8,6 +8,7 @@ import {
 } from 'naive-ui'
 import { onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
+import { getQuery } from '../facets/facets.js'
 import Procedure from './business/Procedure.vue'
 import EntityList from './components/EntityList.vue'
 import FacetsList from './FacetsList.vue'
@@ -17,7 +18,7 @@ import SparqlEditor from './Editor.vue'
 import { useSelectionController } from './controllers/selectionController.js'
 
 const selectionController = useSelectionController()
-const { currentQuery, error, isLoading, results } = storeToRefs(selectionController)
+const { currentFacet, error, isLoading, results } = storeToRefs(selectionController)
 
 function doSparql (query) {
   selectionController.selectFacet({
@@ -27,8 +28,8 @@ function doSparql (query) {
 }
 
 const editorQuery = ref('')
-watch(currentQuery, async (newQuery, oldQuery) => {
-  editorQuery.value = newQuery
+watch(currentFacet, async (newFacet, oldFacet) => {
+  editorQuery.value = getQuery(newFacet)
 })
 
 </script>

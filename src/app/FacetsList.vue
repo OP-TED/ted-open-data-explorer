@@ -10,16 +10,16 @@ import { getLabel } from '../facets/facets.js'
 import { useSelectionController } from './controllers/selectionController.js'
 
 const selectionController = useSelectionController()
-const { facetsList, selectedHistoryIndex, results } =
+const { facetsList, currentFacetIndex, results } =
     storeToRefs(selectionController)
 
-function getHistoryItemType (index) {
-  return selectedHistoryIndex.value === index ? 'info' : 'default'
+function getClass (index) {
+  return currentFacetIndex.value === index ? 'info' : 'default'
 }
 
 onMounted(() => {
   if (facetsList.value.length > 0) {
-    selectionController.selectFacetByIndex(0)
+    selectionController.selectFacet(0)
   }
 })
 
@@ -32,15 +32,15 @@ onMounted(() => {
         v-for="(facet, index) in facetsList"
         :key="index"
         class="history-item"
-        :type="getHistoryItemType(index)"
+        :type="getClass(index)"
         closable
         :trigger-click-on-close="false"
-        @click="selectionController.selectFacetByIndex(index)"
-        @close="selectionController.removeFacetByIndex(index)"
+        @click="selectionController.selectFacet(index)"
+        @close="selectionController.removeFacet(index)"
     >
 
       {{ getLabel(facet) }}
-      <template v-if="index===selectedHistoryIndex">
+      <template v-if="index===currentFacetIndex">
         ({{ results?.stats?.triples }} triples)
       </template>
 
