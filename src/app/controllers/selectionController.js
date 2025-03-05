@@ -26,12 +26,13 @@ export const useSelectionController = defineStore('notice', () => {
   const currentFacet = computed(
     () => facetsList.value[currentFacetIndex.value] || null)
 
-  function addFacet (facet) {
-    if (!facetsList.value.some((item) => getQuery(item) === getQuery(facet))) {
-      facetsList.value.push(facet)
-      return facetsList.value.length - 1
+  function addFacet(facet) {
+    const existingIndex = facetsList.value.findIndex((item) => getQuery(item) === getQuery(facet));
+    if (existingIndex !== -1) {
+      return existingIndex;
     }
-    return -1
+    facetsList.value.push(facet);
+    return facetsList.value.length - 1;
   }
 
   async function removeFacet (index) {
@@ -50,6 +51,9 @@ export const useSelectionController = defineStore('notice', () => {
   }
 
   async function selectFacet (facetOrIndex) {
+
+    console.log('selectFacet', facetOrIndex)
+
     const index = typeof facetOrIndex === 'number' ? facetOrIndex : addFacet(
       facetOrIndex)
     currentFacetIndex.value = index

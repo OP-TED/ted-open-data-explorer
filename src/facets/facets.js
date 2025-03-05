@@ -1,6 +1,6 @@
 import { ns } from '../namespaces.js'
-import getNoticeByPublicationNumber
-  from './getNoticeByPublicationNumber.js'
+import { noticeByPublicationNumber }
+  from './noticeQueries.js'
 import { describeWithPragma } from './getTermDescriptionQuery.js'
 
 function shrink (termStr) {
@@ -37,7 +37,7 @@ function getQuery (facet) {
   if (type === 'query') {
     return query
   } else if (type === 'notice-number') {
-    return getNoticeByPublicationNumber(value)
+    return noticeByPublicationNumber(value)
   } else if (type === 'named-node') {
     return describeWithPragma(term)
   }

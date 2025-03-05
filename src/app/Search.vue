@@ -12,11 +12,17 @@ const selectionController = useSelectionController()
 
 const noticeNumber = ref('')
 
+function normalizePublicationNumber (publicationNumber) {
+  const [number, year] = publicationNumber.split('-')
+  const paddedNumber = number.padStart(8, '0')
+  return `${paddedNumber}-${year}`
+}
+
 function searchByNoticeNumber () {
   if (noticeNumber.value.trim()) {
     selectionController.selectFacet({
       type: 'notice-number',
-      value: noticeNumber.value.trim(),
+      value: normalizePublicationNumber(noticeNumber.value),
     })
   }
 }
