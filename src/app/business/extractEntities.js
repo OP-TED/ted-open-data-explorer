@@ -1,4 +1,5 @@
 import grapoi from 'grapoi'
+import { normalize } from '../../facets/noticeQueries.js'
 import { ns } from '../../namespaces.js'
 
 function guessProcedureIds (pointer) {
@@ -15,9 +16,14 @@ const nodup = (arr) => [...new Set(arr)]
 
 function extractEntities ({ dataset }) {
   const pointer = grapoi({ dataset })
+
+  const procedureIds = guessProcedureIds(pointer)
+  // Used to highlight occurrences in procedure navigation
+  const publicationNumbers = guessPublicationNumbers(pointer).map(normalize)
+
   return {
-    procedureIds: nodup(guessProcedureIds(pointer)),
-    publicationNumbers: nodup(guessPublicationNumbers(pointer)),
+    procedureIds: nodup(procedureIds),
+    publicationNumbers: nodup(publicationNumbers),
   }
 }
 

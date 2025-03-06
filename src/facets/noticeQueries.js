@@ -14,4 +14,19 @@ WHERE {
 `
 }
 
-export { noticeByPublicationNumber }
+function normalize (publicationNumber) {
+  const [number, year] = publicationNumber.split('-')
+  const paddedNumber = number.padStart(8, '0')
+  return `${paddedNumber}-${year}`
+}
+
+function createPublicationNumberFacet (publicationNumber) {
+  if (publicationNumber.trim) {
+    return {
+      type: 'notice-number',
+      value: normalize(publicationNumber),
+    }
+  }
+}
+
+export { normalize, noticeByPublicationNumber, createPublicationNumberFacet }

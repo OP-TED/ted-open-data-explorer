@@ -1,3 +1,5 @@
+import { normalize } from '../../facets/noticeQueries.js'
+
 function doProxy (url) {
   const proxyUrl = 'https://corsproxy.io/?'
   const targetUrl = encodeURIComponent(
@@ -28,13 +30,16 @@ function mapResponse (tedResponse) {
       html: htmlLink,
       nextVersion: notice['next-version'],
       changeNoticeVersionIdentifier: notice['change-notice-version-identifier'],
-      publicationNumber: notice['publication-number'],
+      publicationNumber: normalize(notice['publication-number']),
       publicationDate: notice['publication-date'],
       procedureId: notice['procedure-identifier'],
       noticeType: notice['notice-type'],
       formType: notice['form-type'],
     })
   })
+
+  links.sort((a, b) => a.publicationNumber.localeCompare(b.publicationNumber));
+
   return links
 
 }
