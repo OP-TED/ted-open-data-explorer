@@ -1,98 +1,123 @@
-import { defineStore } from 'pinia'
-import { computed, ref } from 'vue'
-import { getEntities } from '../../traversers/entities.js'
-import { extractEntities } from '../business/extractEntities.js'
-import { doSPARQL } from '../../services/doQuery.js'
+import { useStorage } from "@vueuse/core";
+import { defineStore } from "pinia";
+import { computed, ref, watch } from "vue";
+import { getQuery } from "../../facets/facets.js";
 
-import { ns } from '../../namespaces.js'
-import { useStorage } from '@vueuse/core'
-import { getQuery } from '../../facets/facets.js'
+import { ns } from "../../namespaces.js";
+import { doSPARQL } from "../../services/doQuery.js";
+import { getEntities } from "../../traversers/entities.js";
+import { extractEntities } from "../business/extractEntities.js";
+import { useUrlSearchParams } from "@vueuse/core";
 
 const defaultOptions = {
-  ignoreNamedGraphs: true, matchers: [
+  ignoreNamedGraphs: true,
+  matchers: [
     { predicate: ns.rdf.type, object: ns.epo.ChangeInformation },
     { predicate: ns.rdf.type, object: ns.epo.ResultNotice },
     { predicate: ns.rdf.type, object: ns.epo.Notice },
-    {}],
-}
+    {},
+  ],
+};
+const urlParams = useUrlSearchParams("history");
 
-export const useSelectionController = defineStore('notice', () => {
-  const error = ref(null)
-  const isLoading = ref(false)
-  const results = ref(false)
-  const facetsList = useStorage('facets-v2', [])
-  const currentQuery = ref()
+export const useSelectionController = defineStore("notice", () => {
+  const facetsList = useStorage("facets-v2", []);
+  const currentFacetIndex = ref(null);
+  const isLoading = ref(false);
+  const error = ref(null);
+  const results = ref(null);
 
-  async function executeQuery (query) {
+  const currentFacet = computed(
+    () => facetsList.value[currentFacetIndex.value] || null,
+  );
+
+  function getShareableUrl() {
+    if (!currentFacet.value) return null;
+
+    const url = new URL(window.location.href);
+    url.searchParams.set("facet", JSON.stringify(currentFacet.value));
+    return url.toString();
+  }
+  async function initFromUrlParams () {
+    const facetParam = urlParams.facet;
+    if (facetParam) {
+      try {
+        const facet = JSON.parse(facetParam);
+        await selectFacet(facet);
+      } catch (e) {
+        console.error("Failed to parse facet from URL", e);
+      }
+    }
+  }
+
+  function addFacet(facet) {
+    const existingIndex = facetsList.value.findIndex(
+      (item) => getQuery(item) === getQuery(facet),
+    );
+    if (existingIndex !== -1) {
+      return existingIndex;
+    }
+    facetsList.value.push(facet);
+    return facetsList.value.length - 1;
+  }
+
+  async function removeFacet(index) {
+    const isSelected = index === currentFacetIndex.value;
+
+    facetsList.value.splice(index, 1);
+
+    if (isSelected) {
+      if (facetsList.value.length > 0) {
+        const newIndex = Math.max(0, index - 1); // Select previous facet if possible
+        await selectFacet(newIndex);
+      } else {
+        results.value = null;
+        currentFacetIndex.value = null;
+      }
+    } else if (index < currentFacetIndex.value) {
+      currentFacetIndex.value--;
+    }
+  }
+
+  async function selectFacet(facetOrIndex) {
+    currentFacetIndex.value =
+      typeof facetOrIndex === "number" ? facetOrIndex : addFacet(facetOrIndex);
+  }
+
+  watch(currentFacet, async (newVal, oldVal) => {
+    const newQuery = getQuery(newVal);
+    await executeQuery(newQuery);
+  });
+
+  async function executeQuery(query) {
     try {
-      isLoading.value = true
-      results.value = undefined
-      error.value = null
+      isLoading.value = true;
+      error.value = null;
+      results.value = null;
 
-      const dataset = await doSPARQL(query)
-      const entities = getEntities(dataset, defaultOptions)
-      const extracted = extractEntities({ dataset })
-      const stats = {
-        triples: dataset.size,
-      }
+      const dataset = await doSPARQL(query);
       results.value = {
-        entities, extracted, stats,
-      }
-      currentQuery.value = query
+        entities: getEntities(dataset, defaultOptions),
+        extracted: extractEntities({ dataset }),
+        stats: { triples: dataset.size },
+      };
     } catch (e) {
-      error.value = e
+      error.value = e;
     } finally {
-      isLoading.value = false
+      isLoading.value = false;
     }
-  }
-
-  async function removeFacetByIndex (index) {
-    const isSelected = index === selectedFacetIndex.value
-
-    // Remove the facet
-    facetsList.value.splice(index, 1)
-
-    if (!isSelected) return
-
-    results.value = undefined
-
-    if (facetsList.value.length > 0) {
-      const newIndex = Math.max(0, index - 1) // Select previous facet if possible
-      await selectFacetByIndex(newIndex)
-    } else {
-      currentQuery.value = ''
-    }
-  }
-
-  const selectedFacetIndex = computed(
-    () => facetsList.value.findIndex(
-      (facet) => getQuery(facet) === currentQuery.value))
-
-  function addFacetIfMissing (facet) {
-    if (!facetsList.value.some(item => getQuery(item) === getQuery(facet))) {
-      facetsList.value.push(facet)
-    }
-  }
-
-  async function selectFacetByIndex (index) {
-    const facet = facetsList.value[index]
-    await executeQuery(getQuery(facet))
-  }
-
-  async function selectFacet (facet) {
-    addFacetIfMissing(facet)
-    await executeQuery(getQuery(facet))
   }
 
   return {
-    currentQuery,
-    selectFacet,
-    error,
-    isLoading,
-    results,
-    selectedHistoryIndex: selectedFacetIndex,
     facetsList,
-    selectFacetByIndex,
-    removeFacetByIndex,
-  }
-})
+    currentFacet,
+    currentFacetIndex,
+    isLoading,
+    error,
+    results,
+    removeFacet,
+    selectFacet,
+    getShareableUrl,
+    initFromUrlParams,
+  };
+});

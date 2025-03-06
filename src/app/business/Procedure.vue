@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue'
+import { createPublicationNumberFacet } from '../../facets/noticeQueries.js'
 import { mapResponse, procedureAPIUrl, apiURL } from './tedAPI.js'
 import { useFetch } from '@vueuse/core'
 import { NTimeline, NTimelineItem } from 'naive-ui'
@@ -13,7 +14,7 @@ const props = defineProps({
 const procedureUrl = computed(() => procedureAPIUrl(props.procedureId))
 const procedureClickableUrl = computed(() => apiURL(props.procedureId))
 
-const controller = useSelectionController()
+const selectionController = useSelectionController()
 
 const { isFetching, error, data } = useFetch(procedureUrl.value)
 
@@ -23,20 +24,16 @@ const notices = computed(() => {
   return mapResponse(parsedData)
 })
 
-function select (publicationNumber) {
-  controller.selectFacet({
-    type: 'notice-number',
-    value: publicationNumber,
-  })
+function searchByNoticeNumber (publicationNumber) {
+  const facet = createPublicationNumberFacet(publicationNumber)
+  if (facet) {
+    selectionController.selectFacet(facet)
+  }
 }
 
-// Publication numbers sometimes have zeroes, sometimes they don't
-const normalize = (number) =>
-    number.startsWith('00') ? number : `00${number}`
-
 function contained (publicationNumber) {
-  const numbers = new Set(props.publicationNumbers.map(normalize))
-  return numbers.has(normalize(publicationNumber))
+  const numbers = new Set(props.publicationNumbers)
+  return numbers.has(publicationNumber)
 }
 
 function timelineItemType (notice) {
@@ -67,7 +64,7 @@ function timelineLineType (notice) {
               :time="notice.publicationDate"
               :line-type="timelineLineType(notice)"
               class="timeline-item"
-              @click="select(notice.publicationNumber)"
+              @click="searchByNoticeNumber(notice.publicationNumber)"
           >
             <template #header>
               <h3 v-if="contained(notice.publicationNumber)">
