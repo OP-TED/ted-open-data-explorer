@@ -1,28 +1,52 @@
 import { normalize } from '../../facets/noticeQueries.js'
 
-function doProxy (url) {
-  const proxyUrl = 'https://corsproxy.io/?'
-  const targetUrl = encodeURIComponent(
-    url)
-  return `${proxyUrl}${targetUrl}`
-}
+const apiURL = import.meta.env.VITE_TED_API
 
-const apiURL = (id) => `https://api.ted.europa.eu/private-search/api/v1/notices/family/${id}?language=EN&fields=publication-date&fields=notice-type&fields=form-type&fields=publication-number&fields=deadline-receipt-request&fields=procedure-identifier&fields=change-notice-version-identifier&fields=modification-previous-notice-identifier&fields=previous-planning-identifier-part-lot&fields=previous-planning-identifier-part-part&sort=publication-date,desc`
+async function getRequest (procedureId) {
+  const requestBody = {
+    query: `procedure-identifier="${procedureId}"`,
+    fields: [
+      'publication-date',
+      'notice-type',
+      'form-type',
+      'publication-number',
+      'deadline-receipt-request',
+      'procedure-identifier',
+      'change-notice-version-identifier',
+      'modification-previous-notice-identifier',
+      'next-version',
+      'links',
+    ],
+    limit: 100,
+    sort: [{ 'field': 'publication-date', 'order': 'desc' }],
+  }
 
-function procedureAPIUrl (procedureId) {
-  const url = apiURL(procedureId)
-  return doProxy(url)
+  // Return the request configuration for useFetch to handle
+  return {
+    url: `${apiURL}/notices/search`,
+    options: {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    },
+  }
 }
 
 function mapResponse (tedResponse) {
-  const notices = tedResponse['notices'] || []
+  const notices = tedResponse?.results || []
   const links = []
+
   notices.forEach(notice => {
-    const pdfLink = notice.links.pdf['ENG'] || notice.links.pdf['FRA'] ||
-      Object.values(notice.links.pdf)[0]
-    const xmlLink = notice.links.xml['MUL']
-    const htmlLink = notice.links.html['ENG'] || notice.links.html['FRA'] ||
-      Object.values(notice.links.html)[0]
+    const links_data = notice.links || {}
+
+    const pdfLink = links_data.pdf?.ENG || links_data.pdf?.FRA ||
+      (links_data.pdf ? Object.values(links_data.pdf)[0] : null)
+    const xmlLink = links_data.xml?.MUL
+    const htmlLink = links_data.html?.ENG || links_data.html?.FRA ||
+      (links_data.html ? Object.values(links_data.html)[0] : null)
 
     links.push({
       pdf: pdfLink,
@@ -33,15 +57,13 @@ function mapResponse (tedResponse) {
       publicationNumber: normalize(notice['publication-number']),
       publicationDate: notice['publication-date'],
       procedureId: notice['procedure-identifier'],
-      noticeType: notice['notice-type'],
-      formType: notice['form-type'],
+      noticeType: notice['notice-type'] || { value: 'Unknown' },
+      formType: notice['form-type'] || { value: 'Unknown' },
     })
   })
 
-  links.sort((a, b) => a.publicationNumber.localeCompare(b.publicationNumber));
-
+  links.sort((a, b) => a.publicationNumber.localeCompare(b.publicationNumber))
   return links
-
 }
 
-export { procedureAPIUrl, mapResponse, apiURL }
+export { getRequest, mapResponse }
