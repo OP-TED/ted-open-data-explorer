@@ -5,6 +5,7 @@ const apiURL = import.meta.env.VITE_TED_API
 async function getRequest (procedureId) {
   const requestBody = {
     query: `procedure-identifier="${procedureId}"`,
+    scope: 'ALL',
     fields: [
       'notice-type',
       'publication-date',
