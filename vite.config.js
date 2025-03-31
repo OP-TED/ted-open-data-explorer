@@ -12,12 +12,7 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/sparql/, ''),
-      },
-      '/ted-api': {
-        target: 'https://api.ted.europa.eu/v3',
-        changeOrigin: true,
-        secure: false,
-      },
+      }
     },
   },
   plugins: [

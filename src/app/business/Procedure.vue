@@ -61,18 +61,19 @@ function contained (publicationNumber) {
 }
 
 function timelineItemType (notice) {
-  return notice.changeNoticeVersionIdentifier ? 'warning' : 'success'
+  return notice.noticeVersion ? 'warning' : 'success'
 }
 
-function timelineLineType (notice) {
-  return notice.nextVersion ? 'dashed' : 'default'
-}
+// function timelineLineType (notice) {
+//   return notice.noticeVersion ? 'dashed' : 'default'
+// }
 </script>
 
 <template>
   <div v-if="loading">Fetching data...</div>
   <div v-else-if="error">Error: {{ error }}</div>
   <div class="timeline" v-else-if="responseData">
+
     <div v-if="procedureId">
       <div>Procedure ID:</div>
       <div>{{ procedureId }}</div>
@@ -82,10 +83,9 @@ function timelineLineType (notice) {
         <template v-for="notice of notices" :key="notice.publicationNumber">
           <n-timeline-item
               :type="timelineItemType(notice)"
-              :title="notice.publicationNumber"
-              :content="`${notice.noticeType.value} - ${notice.formType.value}`"
+              :title="`${notice.publicationNumber}${notice.noticeVersion>1?` v-${notice.noticeVersion}`:''} `"
+              :content="`${notice.noticeType} - ${notice.formType}`"
               :time="notice.publicationDate"
-              :line-type="timelineLineType(notice)"
               class="timeline-item"
               @click="searchByNoticeNumber(notice.publicationNumber)"
           >

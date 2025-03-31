@@ -6,19 +6,14 @@ async function getRequest (procedureId) {
   const requestBody = {
     query: `procedure-identifier="${procedureId}"`,
     fields: [
-      'publication-date',
       'notice-type',
+      'publication-date',
+      'notice-version',
       'form-type',
       'publication-number',
-      'deadline-receipt-request',
-      'procedure-identifier',
-      'change-notice-version-identifier',
-      'modification-previous-notice-identifier',
-      'next-version',
       'links',
     ],
-    limit: 100,
-    sort: [{ 'field': 'publication-date', 'order': 'desc' }],
+    limit: 249
   }
 
   // Return the request configuration for useFetch to handle
@@ -36,8 +31,8 @@ async function getRequest (procedureId) {
 }
 
 function mapResponse (tedResponse) {
-  const notices = tedResponse?.results || []
-  const links = []
+  const notices = tedResponse?.notices || []
+  const result = []
 
   notices.forEach(notice => {
     const links_data = notice.links || {}
@@ -48,22 +43,20 @@ function mapResponse (tedResponse) {
     const htmlLink = links_data.html?.ENG || links_data.html?.FRA ||
       (links_data.html ? Object.values(links_data.html)[0] : null)
 
-    links.push({
+    result.push({
       pdf: pdfLink,
       xml: xmlLink,
       html: htmlLink,
-      nextVersion: notice['next-version'],
-      changeNoticeVersionIdentifier: notice['change-notice-version-identifier'],
+      noticeVersion: notice['notice-version'],
       publicationNumber: normalize(notice['publication-number']),
       publicationDate: notice['publication-date'],
-      procedureId: notice['procedure-identifier'],
       noticeType: notice['notice-type'] || { value: 'Unknown' },
       formType: notice['form-type'] || { value: 'Unknown' },
     })
   })
 
-  links.sort((a, b) => a.publicationNumber.localeCompare(b.publicationNumber))
-  return links
+  result.sort((a, b) => a.publicationNumber.localeCompare(b.publicationNumber))
+  return result
 }
 
 export { getRequest, mapResponse }
