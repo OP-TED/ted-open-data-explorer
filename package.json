@@ -5,7 +5,8 @@
   "main": "vite.config.js",
   "scripts": {
     "dev": "vite --mode development",
-    "build": "vite build --mode production"
+    "build": "vite build --mode production",
+    "snapshot": "mocha"
   },
   "repository": {
     "type": "git",
@@ -31,6 +32,9 @@
     "@vueuse/core": "^12.5.0",
     "vite": "^6.0.11",
     "vite-plugin-node-polyfills": "^0.23.0",
-    "vue": "^3.5.13"
+    "vue": "^3.5.13",
+    "expect": "^29.7.0",
+    "expect-mocha-snapshot": "^2.1.5",
+    "mocha": "^11.0.1"
   }
 }
