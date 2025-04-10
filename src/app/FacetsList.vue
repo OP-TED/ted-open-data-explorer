@@ -1,50 +1,33 @@
 <script setup>
-import { NSpace, NTag } from "naive-ui";
-import { storeToRefs } from "pinia";
-import { onMounted } from "vue";
-import { getLabel } from "../facets/facets.js";
+import { NSpace } from 'naive-ui'
+import { storeToRefs } from 'pinia'
+import { onMounted } from 'vue'
+import { useSelectionController } from './controllers/selectionController.js'
+import Facet from './Facet.vue'
 
-import { useSelectionController } from "./controllers/selectionController.js";
-
-const selectionController = useSelectionController();
+const selectionController = useSelectionController()
 const { facetsList, currentFacetIndex, results } =
-    storeToRefs(selectionController);
-
-function getClass(index) {
-    return currentFacetIndex.value === index ? "info" : "default";
-}
+    storeToRefs(selectionController)
 
 onMounted(() => {
-    if (facetsList.value.length > 0) {
-        selectionController.selectFacet(0);
-    }
-    selectionController.initFromUrlParams();
-});
+  if (facetsList.value.length > 0) {
+    selectionController.selectFacet(0)
+  }
+  selectionController.initFromUrlParams()
+})
 </script>
 
 <template>
-    <n-space style="margin: 10px 0">
-        <n-tag
-            v-for="(facet, index) in facetsList"
-            :key="index"
-            class="history-item"
-            :type="getClass(index)"
-            closable
-            :trigger-click-on-close="false"
-            @click="selectionController.selectFacet(index)"
-            @close="selectionController.removeFacet(index)"
-        >
-            {{ getLabel(facet) }}
-            <template v-if="index === currentFacetIndex">
-                ({{ results?.stats?.triples }} triples)
-            </template>
-        </n-tag>
-    </n-space>
+  <n-space style="margin: 10px 0">
+    <Facet
+        v-for="(facet, index) in facetsList"
+        :key="index"
+        :facet="facet"
+        :index="index"
+        :is-selected="currentFacetIndex === index"
+        :total-triples="index === currentFacetIndex ? results?.stats?.triples : undefined"
+        @select="selectionController.selectFacet"
+        @remove="selectionController.removeFacet"
+    />
+  </n-space>
 </template>
-
-<style>
-.history-item {
-    cursor: pointer;
-    transition: transform 0.2s ease;
-}
-</style>
