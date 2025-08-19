@@ -15,7 +15,8 @@ WHERE {
 }
 
 function normalize (publicationNumber) {
-  const [number, year] = publicationNumber.split('-')
+  const trimmed = publicationNumber.replace(/\s+/g, '').trim();
+  const [number, year] = trimmed.split('-')
   const paddedNumber = number.padStart(8, '0')
   return `${paddedNumber}-${year}`
 }
