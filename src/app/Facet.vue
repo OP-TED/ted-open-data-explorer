@@ -1,7 +1,7 @@
 <script setup>
 import { NTag } from "naive-ui";
 import { computed } from "vue";
-import { safeParseFacet } from "./schemas.js";
+import { safeParseFacet } from "../schemas.js";
 
 const props = defineProps({
     facet: {
@@ -27,7 +27,7 @@ function handleClose(e) {
 }
 
 const facetLabel = computed(() => {
-    return props.facet.label || props.facet.value || "Unnamed Facet";
+    return props.facet.label || props.facet.value || "unnamed";
 });
 </script>
 
