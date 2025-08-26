@@ -1,4 +1,8 @@
+<!doctype html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8" />
+    <title>TED SPARQL Editor</title>
     <link href="https://unpkg.com/@triply/yasgui/build/yasgui.min.css" rel="stylesheet" type="text/css"/>
     <script src="https://unpkg.com/@triply/yasgui/build/yasgui.min.js"></script>
     <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
@@ -32,10 +36,13 @@
 
 <body>
 <div id="yasgui"></div>
-<script>
+<script type="module">
+  const sparqlEndpoint = import.meta.env.VITE_SPARQL_ENDPOINT || 'https://publications.europa.eu/webapi/rdf/sparql'
+
   const yasgui = new Yasgui(document.getElementById('yasgui'), {
-    requestConfig: { endpoint: 'https://publications.europa.eu/webapi/rdf/sparql' },
+    requestConfig: { endpoint: sparqlEndpoint },
     copyEndpointOnNewTab: false,
   })
 </script>
 </body>
+</html>

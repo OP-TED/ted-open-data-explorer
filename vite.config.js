@@ -5,6 +5,14 @@ import { nodePolyfills } from 'vite-plugin-node-polyfills'
 
 export default defineConfig({
   base: './', // Ensure assets use relative paths
+  build: {
+    rollupOptions: {
+      input: {
+        main: 'index.html',
+        editor: 'editor.html'
+      }
+    }
+  },
   server: {
     proxy: {
       '/sparql': {
