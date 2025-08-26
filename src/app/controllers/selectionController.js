@@ -2,6 +2,14 @@ import { useStorage } from "@vueuse/core";
 import { defineStore } from "pinia";
 import { computed, ref, watch } from "vue";
 import { getQuery } from "../../facets/facets.js";
+import { 
+  facetEquals, 
+  addUnique, 
+  removeAt, 
+  adjustIndex, 
+  shouldClearResults, 
+  shouldSelectFacet 
+} from "../../facets/facetLogic.js";
 
 import { ns } from "../../namespaces.js";
 import { useUrlFacetParams } from "../../composables/useUrlFacetParams.js";
@@ -40,31 +48,23 @@ export const useSelectionController = defineStore("notice", () => {
   }
 
   function addFacet(facet) {
-    const existingIndex = facetsList.value.findIndex(
-      (item) => getQuery(item) === getQuery(facet),
-    );
-    if (existingIndex !== -1) {
-      return existingIndex;
-    }
-    facetsList.value.push(facet);
-    return facetsList.value.length - 1;
+    const { facets, index } = addUnique(facetsList.value, facet, facetEquals(getQuery));
+    facetsList.value = facets;
+    return index;
   }
 
   async function removeFacet(index) {
-    const isSelected = index === currentFacetIndex.value;
+    const originalIndex = currentFacetIndex.value;
+    const newFacets = removeAt(facetsList.value, index);
+    const newIndex = adjustIndex(originalIndex, index, newFacets.length);
+    
+    facetsList.value = newFacets;
+    currentFacetIndex.value = newIndex;
 
-    facetsList.value.splice(index, 1);
-
-    if (isSelected) {
-      if (facetsList.value.length > 0) {
-        const newIndex = Math.max(0, index - 1); // Select previous facet if possible
-        await selectFacet(newIndex);
-      } else {
-        clearResults();
-        currentFacetIndex.value = null;
-      }
-    } else if (index < currentFacetIndex.value) {
-      currentFacetIndex.value--;
+    if (shouldClearResults(originalIndex, index, newFacets.length)) {
+      clearResults();
+    } else if (shouldSelectFacet(originalIndex, index, newFacets.length)) {
+      await selectFacet(newIndex);
     }
   }
 
@@ -73,7 +73,7 @@ export const useSelectionController = defineStore("notice", () => {
       typeof facetOrIndex === "number" ? facetOrIndex : addFacet(facetOrIndex);
   }
 
-  watch(currentFacet, async (newVal, oldVal) => {
+  watch(currentFacet, async (newVal) => {
     const newQuery = getQuery(newVal);
     await executeQuery(newQuery);
   });
