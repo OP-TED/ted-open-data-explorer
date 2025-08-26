@@ -4,10 +4,8 @@ import { computed, ref, watch } from "vue";
 import { getQuery } from "../../facets/facets.js";
 
 import { ns } from "../../namespaces.js";
-import { doSPARQL } from "../../services/doQuery.js";
-
-import { extractEntities } from "../business/extractEntities.js";
-import { useUrlSearchParams } from "@vueuse/core";
+import { useUrlFacetParams } from "../../composables/useUrlFacetParams.js";
+import { useFacetQuery } from "../../composables/useFacetQuery.js";
 
 const defaultOptions = {
   ignoreNamedGraphs: true,
@@ -18,36 +16,27 @@ const defaultOptions = {
     {},
   ],
 };
-const urlParams = useUrlSearchParams("history");
 
 export const useSelectionController = defineStore("notice", () => {
+  // Composables
+  const { getShareableUrl: generateShareableUrl, initFromUrlParams: initFromUrl } = useUrlFacetParams();
+  const { isLoading, error, results, executeQuery, clearResults } = useFacetQuery();
+  
+  // Store-specific state
   const facetsList = useStorage("facets-v2", []);
   const currentFacetIndex = ref(null);
-  const isLoading = ref(false);
-  const error = ref(null);
-  const results = ref(null);
 
   const currentFacet = computed(
     () => facetsList.value[currentFacetIndex.value] || null,
   );
 
+  // Wrap composable functions to use current context
   function getShareableUrl() {
-    if (!currentFacet.value) return null;
-
-    const url = new URL(window.location.href);
-    url.searchParams.set("facet", JSON.stringify(currentFacet.value));
-    return url.toString();
+    return generateShareableUrl(currentFacet.value);
   }
-  async function initFromUrlParams () {
-    const facetParam = urlParams.facet;
-    if (facetParam) {
-      try {
-        const facet = JSON.parse(facetParam);
-        await selectFacet(facet);
-      } catch (e) {
-        console.error("Failed to parse facet from URL", e);
-      }
-    }
+
+  async function initFromUrlParams() {
+    await initFromUrl(selectFacet);
   }
 
   function addFacet(facet) {
@@ -71,7 +60,7 @@ export const useSelectionController = defineStore("notice", () => {
         const newIndex = Math.max(0, index - 1); // Select previous facet if possible
         await selectFacet(newIndex);
       } else {
-        results.value = null;
+        clearResults();
         currentFacetIndex.value = null;
       }
     } else if (index < currentFacetIndex.value) {
@@ -88,25 +77,6 @@ export const useSelectionController = defineStore("notice", () => {
     const newQuery = getQuery(newVal);
     await executeQuery(newQuery);
   });
-
-  async function executeQuery(query) {
-    try {
-      isLoading.value = true;
-      error.value = null;
-      results.value = null;
-
-      const dataset = await doSPARQL(query);
-      results.value = {
-        dataset: dataset, // RdfTree will handle entity processing
-        extracted: extractEntities({ dataset }),
-        stats: { triples: dataset.size },
-      };
-    } catch (e) {
-      error.value = e;
-    } finally {
-      isLoading.value = false;
-    }
-  }
 
   return {
     facetsList,

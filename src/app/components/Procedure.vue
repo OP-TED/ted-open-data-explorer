@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { createPublicationNumberFacet } from '../../facets/noticeQueries.js'
-import { mapResponse, getRequest } from './tedAPI.js'
+import { mapResponse, getRequest } from '../../services/tedAPI.js'
 import { NTimeline, NTimelineItem } from 'naive-ui'
 import { useSelectionController } from '../controllers/selectionController.js'
 

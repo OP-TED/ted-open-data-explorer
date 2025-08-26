@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite --mode development",
     "build": "vite build --mode production",
+    "test": "mocha --require mocha-expect-snapshot",
     "snapshot": "mocha --require mocha-expect-snapshot"
   },
   "repository": {

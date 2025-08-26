@@ -5,10 +5,10 @@ import {
   NCollapse,
   NButton,
 } from 'naive-ui'
-import { onMounted, ref, watch, computed } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { getQuery } from '../facets/facets.js'
-import Procedure from './business/Procedure.vue'
+import Procedure from './components/Procedure.vue'
 import Term from './components/Term.vue'
 import { RdfTree } from 'rdf-tree'
 import 'rdf-tree/dist/rdf-tree.css'
