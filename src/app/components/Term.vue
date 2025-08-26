@@ -12,7 +12,6 @@ function getDatatype (term) {
   function shrink (x) {
     return x ? x.split('#').pop() : 'NONE'
   }
-
   return term.datatype ? shrink(term.datatype.value) : ''
 }
 
@@ -32,7 +31,7 @@ function guessPrefix (value) {
   return { display: value, href: value }
 }
 
-const termLabel = computed(() => {
+const namedNodeDisplay = computed(() => {
   return props.term.termType === 'NamedNode' ? guessPrefix(props.term.value) : undefined
 })
 
@@ -44,28 +43,30 @@ function selectNamed (term) {
     term,
   })
 }
-
 </script>
 <template>
-
   <div>
     <span>
       <slot></slot>
     </span>
 
-    <template v-if="termLabel">
-      <a href="#" @click="selectNamed(term)"><span v-if="termLabel.prefix"
-                                                   class="vocab"> {{
-          termLabel.prefix
-        }}</span>{{ termLabel.display }}</a>
+    <template v-if="namedNodeDisplay">
+      <a :href="namedNodeDisplay.href" @click.prevent="selectNamed(term)">
+        <span v-if="namedNodeDisplay.prefix" class="vocab">
+          {{ namedNodeDisplay.prefix }}:{{ namedNodeDisplay.display }}
+        </span>
+        <span v-else>
+          {{ namedNodeDisplay.display }}
+        </span>
+      </a>
     </template>
+
     <template v-else>
       {{ term.value }}
       <span class="datatype">{{ getDatatype(term) }}</span>
       <span class="language">{{ getLanguage(term) }}</span>
     </template>
-
   </div>
-
 </template>
+
 

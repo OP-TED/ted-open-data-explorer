@@ -10,7 +10,7 @@ import { ref } from 'vue'
 import { ShareSocialOutline as ShareIcon } from '@vicons/ionicons5';
 import { storeToRefs } from 'pinia'
 import { createPublicationNumberFacet } from '../facets/noticeQueries.js'
-import { getRandomPublicationNumber } from './business/examples.js'
+import { getRandomPublicationNumber } from '../services/randomNoticeService.js'
 import { useSelectionController } from './controllers/selectionController.js'
 
 const selectionController = useSelectionController()
@@ -24,8 +24,8 @@ function searchByNoticeNumber() {
   if (facet) selectionController.selectFacet(facet)
 }
 
-function handleSelectRandom() {
-  noticeNumber.value = getRandomPublicationNumber()
+async function handleSelectRandom() {
+  noticeNumber.value = await getRandomPublicationNumber()
   searchByNoticeNumber()
 }
 

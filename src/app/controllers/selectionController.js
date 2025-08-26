@@ -5,7 +5,7 @@ import { getQuery } from "../../facets/facets.js";
 
 import { ns } from "../../namespaces.js";
 import { doSPARQL } from "../../services/doQuery.js";
-import { getEntities } from "../../traversers/entities.js";
+
 import { extractEntities } from "../business/extractEntities.js";
 import { useUrlSearchParams } from "@vueuse/core";
 
@@ -97,7 +97,7 @@ export const useSelectionController = defineStore("notice", () => {
 
       const dataset = await doSPARQL(query);
       results.value = {
-        entities: getEntities(dataset, defaultOptions),
+        dataset: dataset, // RdfTree will handle entity processing
         extracted: extractEntities({ dataset }),
         stats: { triples: dataset.size },
       };
@@ -121,3 +121,6 @@ export const useSelectionController = defineStore("notice", () => {
     initFromUrlParams,
   };
 });
+
+// Export defaultOptions for use in Navigator
+export { defaultOptions };
