@@ -1,4 +1,4 @@
-import { normalize } from '../../facets/noticeQueries.js'
+import { normalize } from '../facets/noticeQueries.js'
 
 const apiURL = import.meta.env.VITE_TED_API
 
@@ -14,7 +14,7 @@ async function getRequest (procedureId) {
       'publication-number',
       'links',
     ],
-    limit: 249
+    limit: 249,
   }
 
   // Return the request configuration for useFetch to handle

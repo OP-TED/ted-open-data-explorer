@@ -1,7 +1,7 @@
 <script setup xmlns="http://www.w3.org/1999/html">
 
 import { ns } from '../../namespaces.js'
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { useSelectionController } from '../controllers/selectionController.js'
 
 const props = defineProps({
@@ -12,6 +12,7 @@ function getDatatype (term) {
   function shrink (x) {
     return x ? x.split('#').pop() : 'NONE'
   }
+
   return term.datatype ? shrink(term.datatype.value) : ''
 }
 

@@ -1,6 +1,6 @@
 import grapoi from 'grapoi'
-import { normalize } from '../../facets/noticeQueries.js'
-import { ns } from '../../namespaces.js'
+import { normalize } from '../facets/noticeQueries.js'
+import { ns } from '../namespaces.js'
 
 function guessProcedureIds (pointer) {
   return pointer.out(ns.epo.refersToProcedure).
