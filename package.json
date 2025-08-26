@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite --mode development",
     "build": "vite build --mode production",
-    "snapshot": "mocha"
+    "snapshot": "mocha --require mocha-expect-snapshot"
   },
   "repository": {
     "type": "git",
@@ -31,9 +31,10 @@
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.1",
     "@vueuse/core": "^12.5.0",
-    "expect": "^29.7.0",
-    "expect-mocha-snapshot": "^2.1.5",
-    "mocha": "^11.0.1",
+    "chai": "^6.0.1",
+    "expect": "^27.0.4",
+    "mocha": "^9.0.0",
+    "mocha-expect-snapshot": "^3.0.0",
     "vite": "^6.0.11",
     "vite-plugin-node-polyfills": "^0.23.0",
     "vue": "^3.5.13"
