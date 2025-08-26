@@ -4,18 +4,22 @@ import {
   NCollapseItem,
   NCollapse,
   NButton,
-  useMessage,
 } from 'naive-ui'
-import { onMounted, ref, watch } from 'vue'
+import { onMounted, ref, watch, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { getQuery } from '../facets/facets.js'
 import Procedure from './business/Procedure.vue'
-import EntityList from './components/EntityList.vue'
+import Term from './components/Term.vue'
+import { RdfTree } from 'rdf-tree'
+import 'rdf-tree/dist/rdf-tree.css'
+import grapoi from 'grapoi'
+import rdf from 'rdf-ext'
+
 import FacetsList from './FacetsList.vue'
 import TopBar from './TopBar.vue'
 
 import SparqlEditor from './Editor.vue'
-import { useSelectionController } from './controllers/selectionController.js'
+import { useSelectionController, defaultOptions } from './controllers/selectionController.js'
 
 const selectionController = useSelectionController()
 const { currentFacet, error, isLoading, results } =
@@ -31,6 +35,15 @@ function doSparql (query) {
 const editorQuery = ref('')
 watch(currentFacet, async (newFacet, oldFacet) => {
   editorQuery.value = getQuery(newFacet)
+})
+
+// Create a pointer for the RdfTree component from the dataset
+const rdfPointer = computed(() => {
+  if (!results.value?.dataset) return null
+
+  // Create a grapoi pointer from the dataset - RdfTree will handle entity processing
+  const dataset = results.value.dataset
+  return grapoi({ dataset, factory: rdf })
 })
 
 
@@ -81,8 +94,14 @@ watch(currentFacet, async (newFacet, oldFacet) => {
           :publicationNumbers="results.extracted.publicationNumbers"
       />
     </template>
-    <div v-if="results?.entities" class="entity-container">
-      <EntityList :entities="results?.entities"/>
+    <div v-if="results?.dataset && rdfPointer" class="entity-container">
+      <RdfTree
+          :pointer="rdfPointer"
+          :options="defaultOptions"
+          :enableHighlighting="false"
+          :enableRightClick="false"
+          :termComponent="Term"
+      />
     </div>
     <div v-if="isLoading">Loading...</div>
   </n-space>
