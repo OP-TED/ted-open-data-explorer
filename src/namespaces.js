@@ -23,6 +23,7 @@ const ns = {
   rml: rdf.namespace('http://semweb.mmlab.be/ns/rml#'),
   r2rml: rdf.namespace('http://www.w3.org/ns/r2rml#'),
   sh: rdf.namespace('http://www.w3.org/ns/shacl#'),
+  euvoc: rdf.namespace('http://publications.europa.eu/ontology/euvoc#'),
   epo_shape: rdf.namespace('http://data.europa.eu/a4g/data-shape#'),
 }
 
