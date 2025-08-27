@@ -26,7 +26,7 @@ function getLabel (facet) {
   if (type === 'query') {
     return 'Query'
   } else if (type === 'notice-number') {
-    return `Notice ${value}`
+    return `${value}`
   } else if (type === 'named-node') {
     return termLabel(term.value)
   }
