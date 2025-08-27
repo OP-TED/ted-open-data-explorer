@@ -38,6 +38,15 @@ export const useSelectionController = defineStore("notice", () => {
     () => facetsList.value[currentFacetIndex.value] || null,
   );
 
+  // Separate facets by type for different layouts
+  const horizontalFacets = computed(() => 
+    facetsList.value.filter(facet => facet.type !== 'named-node')
+  );
+
+  const verticalFacets = computed(() => 
+    facetsList.value.filter(facet => facet.type === 'named-node')
+  );
+
   // Wrap composable functions to use current context
   function getShareableUrl() {
     return generateShareableUrl(currentFacet.value);
@@ -73,6 +82,14 @@ export const useSelectionController = defineStore("notice", () => {
       typeof facetOrIndex === "number" ? facetOrIndex : addFacet(facetOrIndex);
   }
 
+  // Helper function to select facet by reference (for filtered views)
+  function selectFacetByReference(facet) {
+    const index = facetsList.value.indexOf(facet);
+    if (index !== -1) {
+      currentFacetIndex.value = index;
+    }
+  }
+
   watch(currentFacet, async (newVal) => {
     const newQuery = getQuery(newVal);
     await executeQuery(newQuery);
@@ -80,6 +97,8 @@ export const useSelectionController = defineStore("notice", () => {
 
   return {
     facetsList,
+    horizontalFacets,
+    verticalFacets,
     currentFacet,
     currentFacetIndex,
     isLoading,
@@ -87,6 +106,7 @@ export const useSelectionController = defineStore("notice", () => {
     results,
     removeFacet,
     selectFacet,
+    selectFacetByReference,
     getShareableUrl,
     initFromUrlParams,
   };

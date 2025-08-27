@@ -5,12 +5,33 @@ import { onMounted } from 'vue'
 import { useSelectionController } from './controllers/selectionController.js'
 import Facet from './Facet.vue'
 
+const props = defineProps({
+  facets: {
+    type: Array,
+    required: true
+  },
+  direction: {
+    type: String,
+    default: 'horizontal'
+  }
+})
+
 const selectionController = useSelectionController()
-const { facetsList, currentFacetIndex, results } =
-    storeToRefs(selectionController)
+const { currentFacet, results } = storeToRefs(selectionController)
+
+function handleSelect(facet) {
+  selectionController.selectFacetByReference(facet)
+}
+
+function handleRemove(facet) {
+  const index = selectionController.facetsList.indexOf(facet)
+  if (index !== -1) {
+    selectionController.removeFacet(index)
+  }
+}
 
 onMounted(() => {
-  if (facetsList.value.length > 0) {
+  if (selectionController.facetsList.length > 0) {
     selectionController.selectFacet(0)
   }
   selectionController.initFromUrlParams()
@@ -18,16 +39,20 @@ onMounted(() => {
 </script>
 
 <template>
-  <n-space style="margin: 10px 0">
+  <n-space 
+    :vertical="direction === 'vertical'" 
+    :size="direction === 'vertical' ? 'small' : 'medium'"
+    :style="direction === 'horizontal' ? 'margin: 10px 0' : ''"
+    v-if="facets.length > 0"
+  >
     <Facet
-        v-for="(facet, index) in facetsList"
-        :key="index"
+        v-for="facet in facets"
+        :key="facet.timestamp || facet.term?.value || facet.value"
         :facet="facet"
-        :index="index"
-        :is-selected="currentFacetIndex === index"
-        :total-triples="index === currentFacetIndex ? results?.stats?.triples : undefined"
-        @select="selectionController.selectFacet"
-        @remove="selectionController.removeFacet"
+        :is-selected="currentFacet === facet"
+        :total-triples="currentFacet === facet ? results?.stats?.triples : undefined"
+        @select="() => handleSelect(facet)"
+        @remove="() => handleRemove(facet)"
     />
   </n-space>
 </template>
