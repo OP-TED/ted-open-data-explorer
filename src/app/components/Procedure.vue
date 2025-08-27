@@ -22,7 +22,6 @@ async function fetchData () {
   try {
     const { url, options } = await getRequest(props.procedureId)
     const response = await fetch(url, options)
-    if (!response.ok) throw new Error(`API error: ${response.status}`)
     responseData.value = await response.json()
   } catch (err) {
     error.value = err.message || 'Failed to fetch data'

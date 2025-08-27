@@ -81,13 +81,13 @@ const rdfPointer = computed(() => {
     </n-collapse>
 
     <!-- Horizontal Facets -->
-    <FacetsList :facets="horizontalFacets" direction="horizontal" />
+    <FacetsList :facets="horizontalFacets" direction="horizontal"/>
 
     <!-- Main content area with vertical sidebar -->
     <div class="main-content-area">
       <!-- Vertical Facets Sidebar -->
       <div class="vertical-facets-sidebar">
-        <FacetsList :facets="verticalFacets" direction="vertical" />
+        <FacetsList :facets="verticalFacets" direction="vertical"/>
       </div>
 
       <!-- Main Data Area -->
@@ -105,7 +105,8 @@ const rdfPointer = computed(() => {
           />
         </template>
 
-        <div v-if="results?.dataset && rdfPointer" class="entity-container">
+        <!-- Data -->
+        <template v-if="results?.dataset && rdfPointer">
           <RdfTree
               :pointer="rdfPointer"
               :options="defaultOptions"
@@ -113,7 +114,7 @@ const rdfPointer = computed(() => {
               :enableRightClick="false"
               :termComponent="Term"
           />
-        </div>
+        </template>
         <div v-if="isLoading">Loading...</div>
       </div>
     </div>
@@ -126,27 +127,18 @@ const rdfPointer = computed(() => {
   margin-top: 8px;
 }
 
-.entity-container {
-  background-color: white;
-}
 
 .main-content-area {
   display: flex;
-  min-height: 500px;
 }
 
 .vertical-facets-sidebar {
   flex-shrink: 0;
-  width: 220px;
+  margin-right: 20px;
 }
 
 .data-area {
   flex: 1;
-  padding-left: 20px;
 }
 
-/* Additional styles */
-.n-collapse-item :deep(.n-collapse-item__header) {
-  background-color: #f5f5f5;
-}
 </style>
