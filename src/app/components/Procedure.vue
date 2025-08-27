@@ -54,9 +54,10 @@ const getType = (notice) => notice.noticeVersion ? 'warning' : 'success'
   <div v-else-if="error">{{ error }}</div>
   <div v-else-if="notices.length" class="timeline-container">
     <div v-if="procedureId" class="procedure-id">
-      <div>Procedure ID: {{ procedureId }}</div>
+      <div>Procedure:</div>
+      <div>{{ procedureId }}</div>
     </div>
-    <n-timeline vertical class="timeline">
+    <n-timeline horizontal class="timeline">
       <n-timeline-item
           v-for="notice in notices"
           :key="notice.publicationNumber"
@@ -82,17 +83,26 @@ const getType = (notice) => notice.noticeVersion ? 'warning' : 'success'
 </template>
 
 <style scoped>
-
 .timeline-container {
-  margin-left: auto;
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 20px;
   margin-bottom: 15px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.procedure-id {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.timeline {
+  flex: 1;
 }
 
 .timeline-item {
   cursor: pointer;
 }
-
 </style>

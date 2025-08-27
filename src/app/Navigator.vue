@@ -87,8 +87,16 @@ const rdfPointer = computed(() => {
     <div class="main-content-area">
       <!-- Vertical Facets Sidebar -->
       <div class="vertical-facets-sidebar">
+        <FacetsList :facets="verticalFacets" direction="vertical" />
+      </div>
+
+      <!-- Main Data Area -->
+      <div class="data-area">
+        <div v-if="error">{{ error.message }}</div>
+
+        <!-- Procedure Timeline (only for Notice facets) -->
         <template
-            v-if="results?.extracted"
+            v-if="currentFacet?.type === 'notice-number' && results?.extracted"
             v-for="procedureId of results.extracted.procedureIds"
         >
           <Procedure
@@ -96,12 +104,6 @@ const rdfPointer = computed(() => {
               :publicationNumbers="results.extracted.publicationNumbers"
           />
         </template>
-        <FacetsList :facets="verticalFacets" direction="vertical" />
-      </div>
-
-      <!-- Main Data Area -->
-      <div class="data-area">
-        <div v-if="error">{{ error.message }}</div>
 
         <div v-if="results?.dataset && rdfPointer" class="entity-container">
           <RdfTree
