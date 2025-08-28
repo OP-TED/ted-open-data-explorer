@@ -10,7 +10,7 @@ import {
   lightTheme,
   useMessage,
 } from 'naive-ui'
-import { ref, watch, computed, onMounted } from 'vue'
+import { ref, watch, computed, onMounted, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
 import { ShareSocialOutline as ShareIcon } from '@vicons/ionicons5'
 import { GridLayout, GridItem } from 'grid-layout-plus'
@@ -90,21 +90,33 @@ const gridLayout = ref([
   { i: 'data', x: 0, y: 15, w: 10, h: 25, title: 'Data', component: 'data', collapsed: false },
 ])
 
-// Toggle collapse state with dynamic height adjustment
+// Toggle collapse state with proper layout adjustment
 function toggleCollapse (itemId) {
   const item = gridLayout.value.find(i => i.i === itemId)
-  if (item) {
-    if (item.collapsed) {
-      // Expanding: restore original height
-      item.h = item.originalHeight || item.h
-      item.collapsed = false
-    } else {
-      // Collapsing: store original height and set to minimum
-      item.originalHeight = item.h
-      item.h = 2 // Minimum height for collapsed state (just enough for header)
-      item.collapsed = true
-    }
+  if (!item) return
+  
+  const heightDifference = item.collapsed 
+    ? (item.originalHeight || item.h) - item.h  // Expanding: positive difference
+    : item.h - 2  // Collapsing: negative difference (will be subtracted)
+  
+  if (item.collapsed) {
+    // Expanding: restore original height
+    item.h = item.originalHeight || item.h
+    item.collapsed = false
+  } else {
+    // Collapsing: store original height and set to minimum
+    item.originalHeight = item.h
+    item.h = 2 // Minimum height for collapsed state (just enough for header)
+    item.collapsed = true
   }
+  
+  // Adjust Y positions of items below this one
+  const itemBottom = item.y + (item.collapsed ? item.originalHeight : 2)
+  gridLayout.value.forEach(otherItem => {
+    if (otherItem.i !== itemId && otherItem.y >= itemBottom) {
+      otherItem.y += item.collapsed ? -heightDifference : heightDifference
+    }
+  })
 }
 
 // Grid layout update handler
@@ -163,6 +175,9 @@ const getDataTitle = computed(() => {
           :is-resizable="true"
           :margin="[10, 10]"
           :use-css-transforms="true"
+          :vertical-compact="true"
+          :prevent-collision="false"
+          :auto-size="true"
           @layout-updated="onLayoutUpdated"
         >
           <GridItem
@@ -258,14 +273,15 @@ const getDataTitle = computed(() => {
                   <div v-if="error" class="error-message">{{ error.message }}</div>
                   <div v-else-if="isLoading" class="loading-message">Loading...</div>
                   <template v-else-if="results?.dataset && rdfPointer">
-                    <RdfTree
-                      :pointer="rdfPointer"
-                      :options="defaultOptions"
-                      :enableHighlighting="false"
-                      :enableRightClick="false"
-                      :termComponent="Term"
-                      style="height: 100%; overflow-y: auto;"
-                    />
+                    <div class="rdf-tree-container">
+                      <RdfTree
+                        :pointer="rdfPointer"
+                        :options="defaultOptions"
+                        :enableHighlighting="false"
+                        :enableRightClick="false"
+                        :termComponent="Term"
+                      />
+                    </div>
                   </template>
                   <div v-else class="placeholder">
                     Execute a query to see RDF data
@@ -385,7 +401,15 @@ const getDataTitle = computed(() => {
 
 .data-content {
   height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* Allow flex child to shrink below content size */
+}
+
+.rdf-tree-container {
+  flex: 1;
   overflow-y: auto;
+  min-height: 0;
 }
 
 .placeholder {
