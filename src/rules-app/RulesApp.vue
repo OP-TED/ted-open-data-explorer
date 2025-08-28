@@ -4,15 +4,13 @@ import {
   lightTheme,
   NButton,
   NCard,
-  NCollapse,
-  NCollapseItem,
   NConfigProvider,
   NIcon,
   NInput,
   NMessageProvider,
-  NSpace,
 } from 'naive-ui'
 import { onMounted, ref } from 'vue'
+import { GridLayout, GridItem } from 'grid-layout-plus'
 
 import SparqlEditor from '../app/Editor.vue'
 import { useUrlFacetParams } from '../composables/useUrlFacetParams.js'
@@ -43,11 +41,41 @@ const noticeNumber = ref('')
 const currentFacet = ref(null)
 const { getShareableUrl, initFromUrlParams } = useUrlFacetParams()
 
+// Grid layout items for grid-layout-plus
+const gridLayout = ref([
+  { i: 'search', x: 0, y: 0, w: 6, h: 4, title: 'Search', component: 'search', collapsed: false },
+  { i: 'query', x: 6, y: 0, w: 6, h: 8, title: 'SPARQL Query', component: 'query', collapsed: false },
+  { i: 'results', x: 0, y: 4, w: 6, h: 8, title: 'Results: Data + Inferred Rules', component: 'results', collapsed: false },
+  { i: 'rules', x: 6, y: 8, w: 6, h: 6, title: 'Rules (Turtle)', component: 'rules', collapsed: true },
+])
 
-function datasetToTriples(dataset, limit = 20) {
+// Toggle collapse state
+function toggleCollapse (itemId) {
+  const item = gridLayout.value.find(i => i.i === itemId)
+  if (item) {
+    if (item.collapsed) {
+      // Expanding: restore original height
+      item.h = item.originalHeight || item.h
+      item.collapsed = false
+    } else {
+      // Collapsing: store original height and set to minimum
+      item.originalHeight = item.h
+      item.h = 2 // Minimum height for collapsed state (just enough for header)
+      item.collapsed = true
+    }
+  }
+}
+
+// Grid layout update handler
+function onLayoutUpdated (newLayout) {
+  console.log('Grid layout updated:', newLayout)
+  gridLayout.value = newLayout
+}
+
+function datasetToTriples (dataset, limit = 20) {
   // Normalize into an array (works if dataset is iterable or already an array)
   const triplesArray = Array.from(dataset, q =>
-      `${q.subject.value} ${q.predicate.value} ${q.object.value}`
+      `${q.subject.value} ${q.predicate.value} ${q.object.value}`,
   )
 
   return {
@@ -57,9 +85,8 @@ function datasetToTriples(dataset, limit = 20) {
   }
 }
 
-
 // Create a facet from notice number and execute query
-async function selectFacet(facet) {
+async function selectFacet (facet) {
   currentFacet.value = facet
 
   // Update UI based on facet type
@@ -84,7 +111,7 @@ async function searchByNoticeNumber () {
   await selectFacet(facet)
 }
 
-async function executeCurrentFacet() {
+async function executeCurrentFacet () {
   if (!currentFacet.value) return
 
   isLoading.value = true
@@ -94,8 +121,8 @@ async function executeCurrentFacet() {
     const { count, preview, truncated } = datasetToTriples(dataset)
 
     const facetLabel = currentFacet.value.type === 'notice-number'
-      ? `Notice Data for: ${currentFacet.value.value}`
-      : `Query Results`
+        ? `Notice Data for: ${currentFacet.value.value}`
+        : `Query Results`
 
     resultData.value = `${facetLabel}
 
@@ -150,7 +177,7 @@ ${sparqlQuery.value}`
 }
 
 // Facet-based sharing (following Navigator pattern)
-async function handleShare() {
+async function handleShare () {
   if (!currentFacet.value) {
     console.warn('No facet selected to share')
     return
@@ -186,110 +213,183 @@ onMounted(async () => {
       <div class="rules-app">
         <h1>Rules Playground</h1>
 
-        <n-space vertical size="large">
-          <!-- Search Section -->
-          <n-card title="Search">
-            <n-space justify="space-between" align="center" class="search-bar">
-              <n-space>
-                <n-input
-                    v-model:value="noticeNumber"
-                    placeholder="Enter notice number"
-                    @keyup.enter="searchByNoticeNumber"
-                    style="width: 300px;"
-                />
-                <n-button secondary @click="searchByNoticeNumber" :loading="isLoading">
-                  Search
-                </n-button>
-                <n-button secondary size="small" @click="searchRandomNotice" :loading="isLoading">
-                  Random
-                </n-button>
-              </n-space>
+        <GridLayout
+          :layout="gridLayout"
+          :col-num="12"
+          :row-height="30"
+          :is-draggable="true"
+          :is-resizable="true"
+          :margin="[10, 10]"
+          :use-css-transforms="true"
+          @layout-updated="onLayoutUpdated"
+        >
+          <GridItem
+            v-for="item in gridLayout"
+            :key="item.i"
+            :x="item.x"
+            :y="item.y"
+            :w="item.w"
+            :h="item.h"
+            :i="item.i"
+            :drag-allow-from="'.card-header'"
+            class="grid-item"
+          >
+            <n-card size="small" style="height: 100%;">
+              <template #header>
+                <div class="card-header">
+                  <div class="header-left">
+                    <button @click="toggleCollapse(item.i)" class="collapse-btn">
+                      {{ item.collapsed ? '▶' : '▼' }}
+                    </button>
+                    <span>{{ item.title }}</span>
+                  </div>
+                  <div class="drag-handle">⋮⋮</div>
+                </div>
+              </template>
 
-              <n-button
-                  v-if="currentFacet"
-                  size="small"
-                  type="primary"
-                  @click="handleShare"
-              >
-                <n-icon>
-                  <ShareIcon/>
-                </n-icon>
-              </n-button>
-            </n-space>
-          </n-card>
+              <!-- Content (conditionally shown based on collapsed state) -->
+              <div v-show="!item.collapsed" class="card-content">
+                <!-- Search -->
+                <div v-if="item.component === 'search'" class="search-content">
+                  <div class="search-inputs">
+                    <n-input v-model:value="noticeNumber" placeholder="Enter notice number"
+                             @keyup.enter="searchByNoticeNumber"/>
+                    <n-button secondary @click="searchByNoticeNumber" :loading="isLoading">Search</n-button>
+                    <n-button secondary size="small" @click="searchRandomNotice" :loading="isLoading">Random</n-button>
+                  </div>
+                  <n-button v-if="currentFacet" size="small" type="primary" @click="handleShare">
+                    <n-icon>
+                      <ShareIcon/>
+                    </n-icon>
+                  </n-button>
+                </div>
 
-          <!-- SPARQL Query -->
-          <n-collapse>
-            <n-collapse-item title="SPARQL Query" name="query">
-              <div class="query-editor">
-                <sparql-editor v-model="sparqlQuery" :isLoading="isLoading"/>
-                <n-button @click="executeQuery" :loading="isLoading" class="editor-button">
-                  Execute Query
-                </n-button>
+                <!-- Query -->
+                <div v-else-if="item.component === 'query'" class="query-content">
+                  <sparql-editor v-model="sparqlQuery" :isLoading="isLoading" style="height: calc(100% - 50px);"/>
+                  <n-button @click="executeQuery" :loading="isLoading" style="margin-top: 8px; align-self: flex-end;">
+                    Execute
+                  </n-button>
+                </div>
+
+                <!-- Rules -->
+                <sparql-editor v-else-if="item.component === 'rules'" v-model="rulesData" :isLoading="false"
+                               language="turtle" style="height: 100%;"/>
+
+                <!-- Results -->
+                <div v-else-if="item.component === 'results'" class="results-content">
+                  <pre v-if="resultData">{{ resultData }}</pre>
+                  <div v-else class="placeholder">Click "Search Random Notice" to see results here</div>
+                </div>
               </div>
-            </n-collapse-item>
-          </n-collapse>
-
-          <!-- Rules Editor -->
-          <n-card title="Rules (Turtle)" class="editor-card">
-            <sparql-editor
-                v-model="rulesData"
-                :isLoading="false"
-                language="turtle"
-                style="height: 300px;"
-            />
-          </n-card>
-
-          <!-- Results -->
-          <n-card title="Results: Data + Inferred Rules">
-            <div class="results-area">
-              <pre v-if="resultData">{{ resultData }}</pre>
-              <div v-else class="placeholder">
-                Click "Search Random Notice" to see results here
-              </div>
-            </div>
-          </n-card>
-        </n-space>
+            </n-card>
+          </GridItem>
+        </GridLayout>
       </div>
     </n-config-provider>
   </n-message-provider>
 </template>
 
 <style scoped>
-.rules-app {
-  padding: 20px;
-  max-width: 1400px;
-  margin: 0 auto;
+
+
+.grid-item {
+  border-radius: 8px;
+  overflow: hidden;
 }
 
-.query-editor {
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  cursor: grab;
+  user-select: none;
+}
+
+.card-header:active {
+  cursor: grabbing;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.collapse-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  color: #666;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.collapse-btn:hover {
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+.drag-handle {
+  cursor: grab;
+  color: #666;
+  transition: all 0.2s ease;
+  user-select: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.drag-handle:hover {
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.card-content {
+  height: 100%;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
 }
 
-.editor-card {
-  min-height: 350px;
+/* Content layouts */
+.search-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
 }
 
-.results-area {
-  min-height: 200px;
+.search-inputs {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+}
+
+.query-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.results-content {
+  min-height: 150px;
   background: #f5f5f5;
-  padding: 16px;
+  padding: 12px;
   border-radius: 6px;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-}
-
-.search-bar {
-  width: 100%;
-  padding: 8px;
 }
 
 .placeholder {
   color: #999;
   font-style: italic;
   text-align: center;
-  padding: 40px;
+  padding: 20px;
 }
 
 pre {
@@ -298,13 +398,15 @@ pre {
   margin: 0;
 }
 
-.editor-button {
-  margin-top: 8px;
-}
-
+/* Responsive */
 @media (max-width: 768px) {
-  .query-editor {
+  .search-content {
+    flex-direction: column;
     align-items: stretch;
+  }
+
+  .search-inputs {
+    flex-direction: column;
   }
 }
 </style>
