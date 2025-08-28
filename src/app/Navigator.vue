@@ -1,19 +1,10 @@
 <script setup>
-import {
-  NSpace,
-  NButton,
-  NInput,
-  NIcon,
-  NCard,
-  NConfigProvider,
-  NMessageProvider,
-  lightTheme,
-  useMessage,
-} from 'naive-ui'
+import { NSpace, NButton, NInput, NIcon, NCard, NConfigProvider, NMessageProvider, lightTheme, useMessage, } from 'naive-ui'
 import { ref, watch, computed, onMounted, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
 import { ShareSocialOutline as ShareIcon } from '@vicons/ionicons5'
-import { GridLayout, GridItem } from 'grid-layout-plus'
+import { GridLayout } from 'grid-layout-plus'
+import AutoHeightItem from './AutoHeightItem.vue'
 import { getQuery } from '../facets/facets.js'
 import Notice from './components/Notice.vue'
 import Term from './components/Term.vue'
@@ -21,7 +12,6 @@ import { RdfTree } from 'rdf-tree'
 import 'rdf-tree/dist/rdf-tree.css'
 import grapoi from 'grapoi'
 import rdf from 'rdf-ext'
-
 import FacetsList from './FacetsList.vue'
 import SparqlEditor from './Editor.vue'
 import { useSelectionController, defaultOptions } from './controllers/selectionController.js'
@@ -29,8 +19,7 @@ import { createPublicationNumberFacet } from '../facets/noticeQueries.js'
 import { getRandomPublicationNumber } from '../services/randomNoticeService.js'
 
 const selectionController = useSelectionController()
-const { currentFacet, horizontalFacets, verticalFacets, error, isLoading, results } =
-    storeToRefs(selectionController)
+const { currentFacet, horizontalFacets, verticalFacets, error, isLoading, results } = storeToRefs(selectionController)
 const message = useMessage()
 
 // Search functionality
@@ -90,33 +79,23 @@ const gridLayout = ref([
   { i: 'data', x: 0, y: 15, w: 10, h: 25, title: 'Data', component: 'data', collapsed: false },
 ])
 
+const gridRef = ref(null)
+
 // Toggle collapse state with proper layout adjustment
 function toggleCollapse (itemId) {
   const item = gridLayout.value.find(i => i.i === itemId)
   if (!item) return
-  
-  const heightDifference = item.collapsed 
-    ? (item.originalHeight || item.h) - item.h  // Expanding: positive difference
-    : item.h - 2  // Collapsing: negative difference (will be subtracted)
-  
+
   if (item.collapsed) {
-    // Expanding: restore original height
+    // Expanding: restore original height temporarily, auto-height will adjust
     item.h = item.originalHeight || item.h
     item.collapsed = false
   } else {
-    // Collapsing: store original height and set to minimum
+    // Collapsing: store current height and set to minimum
     item.originalHeight = item.h
-    item.h = 2 // Minimum height for collapsed state (just enough for header)
+    item.h = 2 // Minimum height for collapsed state
     item.collapsed = true
   }
-  
-  // Adjust Y positions of items below this one
-  const itemBottom = item.y + (item.collapsed ? item.originalHeight : 2)
-  gridLayout.value.forEach(otherItem => {
-    if (otherItem.i !== itemId && otherItem.y >= itemBottom) {
-      otherItem.y += item.collapsed ? -heightDifference : heightDifference
-    }
-  })
 }
 
 // Grid layout update handler
@@ -124,10 +103,26 @@ function onLayoutUpdated (newLayout) {
   gridLayout.value = newLayout
 }
 
+// Handle height update
+async function updateItemHeight(id, newHeight) {
+  const item = gridLayout.value.find(item => item.i === id)
+  if (item && !item.collapsed && item.h !== newHeight) {
+    requestAnimationFrame(async () => {
+      // Update height
+      item.h = newHeight
+      // Wait for DOM update
+      await nextTick()
+      // Create new layout array to trigger recalculation
+      const newLayout = JSON.parse(JSON.stringify(gridLayout.value))
+      gridLayout.value.splice(0, gridLayout.value.length, ...newLayout)
+      gridRef.value && gridRef.value.layoutUpdate()
+    })
+  }
+}
+
 // Create a pointer for the RdfTree component from the dataset
 const rdfPointer = computed(() => {
   if (!results.value?.dataset) return null
-
   // Create a grapoi pointer from the dataset - RdfTree will handle entity processing
   const dataset = results.value.dataset
   return grapoi({ dataset, factory: rdf })
@@ -137,59 +132,54 @@ const rdfPointer = computed(() => {
 const getContextTitle = computed(() => {
   const item = gridLayout.value.find(i => i.i === 'context')
   if (!item) return 'Facet'
-  
   const hasNotice = currentFacet.value?.type === 'notice-number' && currentFacet.value?.value
-  
   if (hasNotice) {
     return `Notice - ${currentFacet.value.value}`
   }
-  
   return 'Facet'
 })
 
 // Dynamic title for data panel with triple count
 const getDataTitle = computed(() => {
   const hasData = results.value?.dataset && results.value?.stats?.triples
-  
   if (hasData) {
     const tripleCount = results.value.stats.triples
     return `Data (${tripleCount} triples)`
   }
-  
   return 'Data'
 })
-
-
 </script>
-
 
 <template>
   <n-message-provider>
     <n-config-provider :theme="lightTheme">
       <div class="navigator-app">
         <GridLayout
-          :layout="gridLayout"
-          :col-num="12"
-          :row-height="30"
-          :is-draggable="true"
-          :is-resizable="true"
-          :margin="[10, 10]"
-          :use-css-transforms="true"
-          :vertical-compact="true"
-          :prevent-collision="false"
-          :auto-size="true"
-          @layout-updated="onLayoutUpdated"
+            ref="gridRef"
+            :layout="gridLayout"
+            :col-num="12"
+            :row-height="30"
+            :is-draggable="true"
+            :is-resizable="true"
+            :margin="[10, 10]"
+            :use-css-transforms="true"
+            :vertical-compact="true"
+            :prevent-collision="false"
+            :auto-size="true"
+            @layout-updated="onLayoutUpdated"
         >
-          <GridItem
-            v-for="item in gridLayout"
-            :key="item.i"
-            :x="item.x"
-            :y="item.y"
-            :w="item.w"
-            :h="item.h"
-            :i="item.i"
-            :drag-allow-from="'.card-header'"
-            class="grid-item"
+          <AutoHeightItem
+              v-for="item in gridLayout"
+              :key="item.i"
+              :x="item.x"
+              :y="item.y"
+              :w="item.w"
+              :h="item.h"
+              :i="item.i"
+              :drag-allow-from="'.card-header'"
+              :row-height="30"
+              class="grid-item"
+              @update:h="updateItemHeight(item.i, $event)"
           >
             <n-card size="small" style="height: 100%;">
               <template #header>
@@ -203,17 +193,12 @@ const getDataTitle = computed(() => {
                   <div class="drag-handle">⋮⋮</div>
                 </div>
               </template>
-
               <!-- Content (conditionally shown based on collapsed state) -->
               <div v-show="!item.collapsed" class="card-content">
                 <!-- Search Panel -->
                 <div v-if="item.component === 'search'" class="search-content">
                   <div class="search-inputs">
-                    <n-input 
-                      v-model:value="noticeNumber" 
-                      placeholder="Enter notice number"
-                      @keyup.enter="searchByNoticeNumber"
-                    />
+                    <n-input v-model:value="noticeNumber" placeholder="Enter notice number" @keyup.enter="searchByNoticeNumber" />
                     <n-button secondary @click="searchByNoticeNumber" :loading="isLoading">
                       Search
                     </n-button>
@@ -227,60 +212,37 @@ const getDataTitle = computed(() => {
                     </n-icon>
                   </n-button>
                 </div>
-
                 <!-- SPARQL Query Panel -->
                 <div v-else-if="item.component === 'query'" class="query-content">
-                  <sparql-editor 
-                    v-model="editorQuery" 
-                    :isLoading="isLoading" 
-                    style="height: calc(100% - 50px);"
-                  />
-                  <n-button 
-                    @click="doSparql(editorQuery)" 
-                    :loading="isLoading" 
-                    style="margin-top: 8px; align-self: flex-end;"
-                  >
+                  <sparql-editor v-model="editorQuery" :isLoading="isLoading" style="height: calc(100% - 50px);" />
+                  <n-button @click="doSparql(editorQuery)" :loading="isLoading" style="margin-top: 8px; align-self: flex-end;" >
                     Execute Query
                   </n-button>
                 </div>
-
                 <!-- Facets-1 Panel -->
                 <div v-else-if="item.component === 'facets-1'" class="facets-content">
                   <FacetsList :facets="horizontalFacets"/>
                 </div>
-
                 <!-- Facets-2 Panel -->
                 <div v-else-if="item.component === 'facets-2'" class="facets-content">
                   <FacetsList :facets="verticalFacets"/>
                 </div>
-
                 <!-- Context Panel (Procedures/Entities) -->
                 <div v-else-if="item.component === 'context'" class="context-content">
                   <div v-if="currentFacet?.type === 'notice-number' && currentFacet?.value">
-                    <Notice
-                      :publicationNumber="currentFacet.value"
-                      :procedureIds="results?.extracted?.procedureIds || []"
-                      :allPublicationNumbers="results?.extracted?.publicationNumbers || []"
-                    />
+                    <Notice :publicationNumber="currentFacet.value" :procedureIds="results?.extracted?.procedureIds || []" :allPublicationNumbers="results?.extracted?.publicationNumbers || []" />
                   </div>
                   <div v-else class="placeholder">
                     Select a notice to see extracted entities and procedures
                   </div>
                 </div>
-
                 <!-- Data Panel (RDF Tree) -->
                 <div v-else-if="item.component === 'data'" class="data-content">
                   <div v-if="error" class="error-message">{{ error.message }}</div>
                   <div v-else-if="isLoading" class="loading-message">Loading...</div>
                   <template v-else-if="results?.dataset && rdfPointer">
                     <div class="rdf-tree-container">
-                      <RdfTree
-                        :pointer="rdfPointer"
-                        :options="defaultOptions"
-                        :enableHighlighting="false"
-                        :enableRightClick="false"
-                        :termComponent="Term"
-                      />
+                      <RdfTree :pointer="rdfPointer" :options="defaultOptions" :enableHighlighting="false" :enableRightClick="false" :termComponent="Term" />
                     </div>
                   </template>
                   <div v-else class="placeholder">
@@ -289,7 +251,7 @@ const getDataTitle = computed(() => {
                 </div>
               </div>
             </n-card>
-          </GridItem>
+          </AutoHeightItem>
         </GridLayout>
       </div>
     </n-config-provider>
@@ -439,7 +401,6 @@ const getDataTitle = computed(() => {
     flex-direction: column;
     align-items: stretch;
   }
-
   .search-inputs {
     flex-direction: column;
   }
