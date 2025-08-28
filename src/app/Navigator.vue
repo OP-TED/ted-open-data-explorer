@@ -15,7 +15,7 @@ import { storeToRefs } from 'pinia'
 import { ShareSocialOutline as ShareIcon } from '@vicons/ionicons5'
 import { GridLayout, GridItem } from 'grid-layout-plus'
 import { getQuery } from '../facets/facets.js'
-import Procedure from './components/Procedure.vue'
+import Notice from './components/Notice.vue'
 import Term from './components/Term.vue'
 import { RdfTree } from 'rdf-tree'
 import 'rdf-tree/dist/rdf-tree.css'
@@ -36,6 +36,8 @@ const message = useMessage()
 // Search functionality
 const noticeNumber = ref('')
 
+// Note: Procedure data management now handled by Notice components
+
 function searchByNoticeNumber() {
   if (!noticeNumber.value.trim()) {
     console.warn('Notice number is required')
@@ -49,6 +51,8 @@ async function handleSelectRandom() {
   noticeNumber.value = await getRandomPublicationNumber()
   searchByNoticeNumber()
 }
+
+// Note: Procedure data fetching now handled by individual Notice components
 
 async function handleShare() {
   const url = selectionController.getShareableUrl()
@@ -74,14 +78,16 @@ watch(currentFacet, async (newFacet) => {
   editorQuery.value = getQuery(newFacet)
 })
 
+// Note: Individual Notice components handle their own data fetching
+
 // Grid layout items for grid-layout-plus
 const gridLayout = ref([
-  { i: 'search', x: 0, y: 0, w: 12, h: 3, title: 'Search', component: 'search', collapsed: false },
-  { i: 'query', x: 0, y: 3, w: 12, h: 6, title: 'SPARQL Query', component: 'query', collapsed: false },
-  { i: 'facets-1', x: 0, y: 9, w: 6, h: 4, title: 'Facets-1', component: 'facets-1', collapsed: false },
-  { i: 'facets-2', x: 6, y: 9, w: 6, h: 4, title: 'History', component: 'facets-2', collapsed: false },
-  { i: 'context', x: 0, y: 13, w: 6, h: 8, title: 'Context', component: 'context', collapsed: false },
-  { i: 'data', x: 6, y: 13, w: 6, h: 16, title: 'Data', component: 'data', collapsed: false },
+  { i: 'search', x: 0, y: 0, w: 6, h: 3, title: 'Search', component: 'search', collapsed: false },
+  { i: 'query', x: 6, y: 0, w: 6, h: 3, title: 'SPARQL Query', component: 'query', collapsed: true, originalHeight: 6 },
+  { i: 'facets-1', x: 0, y: 3, w: 12, h: 5, title: 'Facets-1', component: 'facets-1', collapsed: false },
+  { i: 'facets-2', x: 10, y: 15, w: 2, h: 22, title: 'History', component: 'facets-2', collapsed: false },
+  { i: 'context', x: 0, y: 8, w: 12, h: 7, title: 'Context', component: 'context', collapsed: false },
+  { i: 'data', x: 0, y: 15, w: 10, h: 25, title: 'Data', component: 'data', collapsed: false },
 ])
 
 // Toggle collapse state with dynamic height adjustment
@@ -103,7 +109,6 @@ function toggleCollapse (itemId) {
 
 // Grid layout update handler
 function onLayoutUpdated (newLayout) {
-  console.log('Grid layout updated:', newLayout)
   gridLayout.value = newLayout
 }
 
@@ -119,30 +124,27 @@ const rdfPointer = computed(() => {
 // Dynamic title for context panel
 const getContextTitle = computed(() => {
   const item = gridLayout.value.find(i => i.i === 'context')
-  if (!item) return 'Context'
+  if (!item) return 'Facet'
   
-  const hasProcedures = currentFacet.value?.type === 'notice-number' && results.value?.extracted?.procedureIds?.length > 0
+  const hasNotice = currentFacet.value?.type === 'notice-number' && currentFacet.value?.value
   
-  if (hasProcedures) {
-    if (item.collapsed && results.value?.extracted) {
-      // Count notices per procedure
-      const procedureIds = results.value.extracted.procedureIds || []
-      const publicationNumbers = results.value.extracted.publicationNumbers || []
-      
-      // Create a map of procedureId to notice count (assuming 1:1 mapping for now)
-      // If there's a specific mapping available, use that instead
-      const counts = procedureIds.map((_, index) => {
-        // This is a simplified approach - you might need to adjust based on actual data structure
-        const noticeCount = Math.ceil(publicationNumbers.length / procedureIds.length)
-        return `(${noticeCount})`
-      }).join(' ')
-      
-      return `Procedure ${counts}`
-    }
-    return 'Procedure'
+  if (hasNotice) {
+    return `Notice - ${currentFacet.value.value}`
   }
   
-  return 'Context'
+  return 'Facet'
+})
+
+// Dynamic title for data panel with triple count
+const getDataTitle = computed(() => {
+  const hasData = results.value?.dataset && results.value?.stats?.triples
+  
+  if (hasData) {
+    const tripleCount = results.value.stats.triples
+    return `Data (${tripleCount} triples)`
+  }
+  
+  return 'Data'
 })
 
 
@@ -181,7 +183,7 @@ const getContextTitle = computed(() => {
                     <button @click="toggleCollapse(item.i)" class="collapse-btn">
                       {{ item.collapsed ? '▶' : '▼' }}
                     </button>
-                    <span>{{ item.i === 'context' ? getContextTitle : item.title }}</span>
+                    <span>{{ item.i === 'context' ? getContextTitle : (item.i === 'data' ? getDataTitle : item.title) }}</span>
                   </div>
                   <div class="drag-handle">⋮⋮</div>
                 </div>
@@ -239,13 +241,12 @@ const getContextTitle = computed(() => {
 
                 <!-- Context Panel (Procedures/Entities) -->
                 <div v-else-if="item.component === 'context'" class="context-content">
-                  <div v-if="currentFacet?.type === 'notice-number' && results?.extracted">
-                    <template v-for="procedureId of results.extracted.procedureIds" :key="procedureId">
-                      <Procedure
-                        :procedureId="procedureId"
-                        :publicationNumbers="results.extracted.publicationNumbers"
-                      />
-                    </template>
+                  <div v-if="currentFacet?.type === 'notice-number' && currentFacet?.value">
+                    <Notice
+                      :publicationNumber="currentFacet.value"
+                      :procedureIds="results?.extracted?.procedureIds || []"
+                      :allPublicationNumbers="results?.extracted?.publicationNumbers || []"
+                    />
                   </div>
                   <div v-else class="placeholder">
                     Select a notice to see extracted entities and procedures

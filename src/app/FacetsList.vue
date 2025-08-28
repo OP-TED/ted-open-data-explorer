@@ -20,7 +20,7 @@ const localFacets = ref([])
 // Watch props.facets and update local copy
 watchEffect(() => {
   localFacets.value = [...props.facets]
-  console.log('Facets updated:', localFacets.value)
+
 })
 
 function handleSelect(facet) {
