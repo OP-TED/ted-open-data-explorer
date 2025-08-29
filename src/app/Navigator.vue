@@ -22,10 +22,7 @@ const selectionController = useSelectionController()
 const { currentFacet, horizontalFacets, verticalFacets, error, isLoading, results } = storeToRefs(selectionController)
 const message = useMessage()
 
-// Search functionality
 const noticeNumber = ref('')
-
-// Note: Procedure data management now handled by Notice components
 
 function searchByNoticeNumber() {
   if (!noticeNumber.value.trim()) {
@@ -41,7 +38,6 @@ async function handleSelectRandom() {
   searchByNoticeNumber()
 }
 
-// Note: Procedure data fetching now handled by individual Notice components
 
 async function handleShare() {
   const url = selectionController.getShareableUrl()
@@ -67,9 +63,7 @@ watch(currentFacet, async (newFacet) => {
   editorQuery.value = getQuery(newFacet)
 })
 
-// Note: Individual Notice components handle their own data fetching
 
-// Grid layout items for grid-layout-plus
 const gridLayout = ref([
   { i: 'search', x: 0, y: 0, w: 6, h: 3, title: 'Search', component: 'search', collapsed: false },
   { i: 'query', x: 6, y: 0, w: 6, h: 3, title: 'SPARQL Query', component: 'query', collapsed: true, originalHeight: 6 },
@@ -81,54 +75,56 @@ const gridLayout = ref([
 
 const gridRef = ref(null)
 
-// Toggle collapse state with proper layout adjustment
-function toggleCollapse (itemId) {
+async function toggleCollapse (itemId) {
   const item = gridLayout.value.find(i => i.i === itemId)
   if (!item) return
 
   if (item.collapsed) {
-    // Expanding: restore original height temporarily, auto-height will adjust
     item.h = item.originalHeight || item.h
     item.collapsed = false
   } else {
-    // Collapsing: store current height and set to minimum
     item.originalHeight = item.h
-    item.h = 2 // Minimum height for collapsed state
+    item.h = 2
     item.collapsed = true
   }
+
+  requestAnimationFrame(async () => {
+    await nextTick()
+    const newLayout = JSON.parse(JSON.stringify(gridLayout.value))
+    gridLayout.value.splice(0, gridLayout.value.length, ...newLayout)
+    
+    if (gridRef.value && gridRef.value.layoutUpdate) {
+      gridRef.value.layoutUpdate()
+    }
+  })
 }
 
-// Grid layout update handler
 function onLayoutUpdated (newLayout) {
   gridLayout.value = newLayout
 }
 
-// Handle height update
 async function updateItemHeight(id, newHeight) {
   const item = gridLayout.value.find(item => item.i === id)
-  if (item && !item.collapsed && item.h !== newHeight) {
+  if (item && item.h !== newHeight && !item.collapsed) {
+    
     requestAnimationFrame(async () => {
-      // Update height
       item.h = newHeight
-      // Wait for DOM update
       await nextTick()
-      // Create new layout array to trigger recalculation
       const newLayout = JSON.parse(JSON.stringify(gridLayout.value))
       gridLayout.value.splice(0, gridLayout.value.length, ...newLayout)
-      gridRef.value && gridRef.value.layoutUpdate()
+      
+      if (gridRef.value && gridRef.value.layoutUpdate) {
+        gridRef.value.layoutUpdate()
+      }
     })
   }
 }
 
-// Create a pointer for the RdfTree component from the dataset
 const rdfPointer = computed(() => {
   if (!results.value?.dataset) return null
-  // Create a grapoi pointer from the dataset - RdfTree will handle entity processing
-  const dataset = results.value.dataset
-  return grapoi({ dataset, factory: rdf })
+  return grapoi({ dataset: results.value.dataset, factory: rdf })
 })
 
-// Dynamic title for context panel
 const getContextTitle = computed(() => {
   const item = gridLayout.value.find(i => i.i === 'context')
   if (!item) return 'Facet'
@@ -139,7 +135,6 @@ const getContextTitle = computed(() => {
   return 'Facet'
 })
 
-// Dynamic title for data panel with triple count
 const getDataTitle = computed(() => {
   const hasData = results.value?.dataset && results.value?.stats?.triples
   if (hasData) {
