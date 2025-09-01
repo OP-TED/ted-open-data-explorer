@@ -28,7 +28,7 @@ const getType = (notice) => notice.noticeVersion ? 'warning' : 'success'
 
 <template>
   <div v-if="error" class="error-message">{{ error }}</div>
-  <div v-else-if="notices.length" class="procedure-container">
+  <div v-else-if="notices.length">
     <div v-if="procedureId" class="procedure-id">
       Procedure: {{ procedureId }}
     </div>
@@ -58,17 +58,12 @@ const getType = (notice) => notice.noticeVersion ? 'warning' : 'success'
 </template>
 
 <style scoped>
-.procedure-container {
-  padding: 16px;
-  margin-bottom: 15px;
-  border-bottom: 1px solid #e0e0e0;
-}
+
 
 .procedure-id {
   font-weight: 600;
   color: #2c3e50;
-  margin-bottom: 12px;
-  font-size: 0.95em;
+  font-size: 0.9em;
 }
 
 .timeline {

@@ -104,68 +104,7 @@ export const useSelectionController = defineStore("notice", () => {
     await executeQuery(newQuery);
   });
 
-  function moveFacetBetweenContainers(facet, newIndex, targetType) {
-    // Remove facet from current position
-    const currentIndex = facetsList.value.indexOf(facet);
-    if (currentIndex === -1) return;
-    
-    const newFacetsList = [...facetsList.value];
-    newFacetsList.splice(currentIndex, 1);
-    
-    // Convert facet type for destination container
-    const convertedFacet = { ...facet };
-    if (targetType === 'vertical') {
-      // Convert to vertical (named-node) format
-      convertedFacet.type = 'named-node';
-      if (!convertedFacet.term && convertedFacet.value) {
-        convertedFacet.term = { value: convertedFacet.value };
-        delete convertedFacet.value;
-      }
-    } else {
-      // Convert to horizontal format (keep existing type or default to 'query')
-      if (convertedFacet.type === 'named-node') {
-        convertedFacet.type = 'query'; // or determine appropriate type
-        if (!convertedFacet.value && convertedFacet.term) {
-          convertedFacet.value = convertedFacet.term.value;
-          delete convertedFacet.term;
-        }
-      }
-    }
-    
-    // Find insertion point in destination container
-    const targetFacets = targetType === 'vertical' 
-      ? newFacetsList.filter(f => f.type === 'named-node')
-      : newFacetsList.filter(f => f.type !== 'named-node');
-    
-    let insertIndex;
-    if (newIndex === 0 || targetFacets.length === 0) {
-      // Insert at beginning of target container group
-      insertIndex = targetType === 'vertical'
-        ? newFacetsList.findIndex(f => f.type === 'named-node')
-        : newFacetsList.findIndex(f => f.type !== 'named-node');
-      insertIndex = insertIndex === -1 ? newFacetsList.length : insertIndex;
-    } else {
-      // Insert after the facet at newIndex-1 in target container
-      const targetFacet = targetFacets[Math.min(newIndex, targetFacets.length - 1)];
-      insertIndex = newFacetsList.indexOf(targetFacet) + 1;
-    }
-    
-    // Insert converted facet
-    newFacetsList.splice(insertIndex, 0, convertedFacet);
-    
-    // Update facets list
-    facetsList.value = newFacetsList;
-    
-    // Update current facet index if needed
-    if (currentFacetIndex.value === currentIndex) {
-      currentFacetIndex.value = insertIndex;
-    } else if (currentFacetIndex.value > currentIndex) {
-      currentFacetIndex.value--;
-    }
-    if (currentFacetIndex.value >= insertIndex && currentFacetIndex.value !== insertIndex) {
-      currentFacetIndex.value++;
-    }
-  }
+
 
   function reorderFacets(oldIndex, newIndex, facetType) {
     // Get the correct facet list based on type
@@ -231,7 +170,6 @@ export const useSelectionController = defineStore("notice", () => {
     getShareableUrl,
     initFromUrlParams,
     reorderFacets,
-    moveFacetBetweenContainers,
   };
 });
 
