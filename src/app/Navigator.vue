@@ -18,12 +18,9 @@ import AutoHeightItem from './AutoHeightItem.vue'
 import { getQuery } from '../facets/facets.js'
 import Notice from './components/Notice.vue'
 import Term from './components/Term.vue'
-import { RdfTree } from 'rdf-tree'
-import 'rdf-tree/dist/rdf-tree.css'
-import grapoi from 'grapoi'
-import rdf from 'rdf-ext'
+import Data from './components/Data.vue'
+import SparqlEditor from './components/SparqlEditor.vue'
 import FacetsList from './FacetsList.vue'
-import SparqlEditor from './Editor.vue'
 import { useSelectionController, defaultOptions } from './controllers/selectionController.js'
 import { createPublicationNumberFacet } from '../facets/noticeQueries.js'
 import { getRandomPublicationNumber } from '../services/randomNoticeService.js'
@@ -128,10 +125,6 @@ async function updateItemHeight (id, newHeight) {
   }
 }
 
-const rdfPointer = computed(() => {
-  if (!results.value?.dataset) return null
-  return grapoi({ dataset: results.value.dataset, factory: rdf })
-})
 
 const getContextTitle = computed(() => {
   const item = gridLayout.value.find(i => i.i === 'context')
@@ -144,10 +137,10 @@ const getContextTitle = computed(() => {
 })
 
 const getDataTitle = computed(() => {
-  const hasData = results.value?.dataset && results.value?.stats?.triples
+  const hasData = results.value?.dataset
   if (hasData) {
-    const tripleCount = results.value.stats.triples
-    return `Data (${tripleCount} triples)`
+    const tripleCount = results.value.dataset.size
+    return `Data (${tripleCount.toLocaleString()} triples)`
   }
   return 'Data'
 })
@@ -220,7 +213,7 @@ const getDataTitle = computed(() => {
                 </div>
                 <!-- SPARQL Query Panel -->
                 <div v-else-if="item.component === 'query'" class="query-content">
-                  <sparql-editor v-model="editorQuery" :isLoading="isLoading" style="height: calc(100% - 50px);"/>
+                  <SparqlEditor v-model="editorQuery" :isLoading="isLoading" style="height: calc(100% - 50px);"/>
                   <n-button @click="doSparql(editorQuery)" :loading="isLoading"
                             style="margin-top: 8px; align-self: flex-end;">
                     Execute Query
@@ -246,19 +239,7 @@ const getDataTitle = computed(() => {
                   </div>
                 </div>
                 <!-- Data Panel (RDF Tree) -->
-                <div v-else-if="item.component === 'data'" class="data-content">
-                  <div v-if="error" class="error-message">{{ error.message }}</div>
-                  <div v-else-if="isLoading" class="loading-message">Loading...</div>
-                  <template v-else-if="results?.dataset && rdfPointer">
-                    <div class="rdf-tree-container">
-                      <RdfTree :pointer="rdfPointer" :options="defaultOptions" :enableHighlighting="false"
-                               :enableRightClick="false" :termComponent="Term"/>
-                    </div>
-                  </template>
-                  <div v-else class="placeholder">
-                    Execute a query to see RDF data
-                  </div>
-                </div>
+                <Data v-else-if="item.component === 'data'" :error="error" :isLoading="isLoading" :dataset="results?.dataset" />
               </div>
             </n-card>
           </AutoHeightItem>
@@ -366,38 +347,7 @@ const getDataTitle = computed(() => {
   padding: 8px 0;
 }
 
-.data-content {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  min-height: 0; /* Allow flex child to shrink below content size */
-}
 
-.rdf-tree-container {
-  flex: 1;
-  overflow-y: auto;
-  min-height: 0;
-}
-
-.placeholder {
-  color: #999;
-  font-style: italic;
-  text-align: center;
-}
-
-.error-message {
-  color: #d32f2f;
-  background: #ffebee;
-  padding: 12px;
-  border-radius: 6px;
-  margin-bottom: 8px;
-}
-
-.loading-message {
-  text-align: center;
-  color: #666;
-  padding: 20px;
-}
 
 /* Responsive */
 @media (max-width: 768px) {
