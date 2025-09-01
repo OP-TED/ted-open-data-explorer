@@ -31,7 +31,16 @@ export const useSelectionController = defineStore("notice", () => {
   const { isLoading, error, results, executeQuery, clearResults } = useFacetQuery();
   
   // Store-specific state
-  const facetsList = useStorage("facets-v2", []);
+  const facetsList = useStorage("facets-v2", [
+    // Add some test facets for drag and drop testing
+    { type: 'contract', value: 'Test Contract 1', timestamp: Date.now() + 1 },
+    { type: 'procedure', value: 'Test Procedure 1', timestamp: Date.now() + 2 },
+    { type: 'notice', value: 'Test Notice 1', timestamp: Date.now() + 3 },
+    { type: 'contract', value: 'Test Contract 2', timestamp: Date.now() + 4 },
+    { type: 'named-node', term: { value: 'Test Vertical 1' }, timestamp: Date.now() + 5 },
+    { type: 'named-node', term: { value: 'Test Vertical 2' }, timestamp: Date.now() + 6 },
+    { type: 'named-node', term: { value: 'Test Vertical 3' }, timestamp: Date.now() + 7 }
+  ]);
   const currentFacetIndex = ref(null);
 
   const currentFacet = computed(
@@ -95,6 +104,57 @@ export const useSelectionController = defineStore("notice", () => {
     await executeQuery(newQuery);
   });
 
+
+
+  function reorderFacets(oldIndex, newIndex, facetType) {
+    // Get the correct facet list based on type
+    const isVertical = facetType === 'vertical';
+    const filteredFacets = isVertical 
+      ? facetsList.value.filter(facet => facet.type === 'named-node')
+      : facetsList.value.filter(facet => facet.type !== 'named-node');
+    
+    // Get the facet being moved
+    const movedFacet = filteredFacets[oldIndex];
+    if (!movedFacet) return;
+    
+    // Find the original indices in the full facets list
+    const originalOldIndex = facetsList.value.indexOf(movedFacet);
+    
+    // Remove the facet from its current position
+    const newFacetsList = [...facetsList.value];
+    newFacetsList.splice(originalOldIndex, 1);
+    
+    // Find where to insert it based on the filtered list
+    let insertIndex;
+    if (newIndex === 0) {
+      // Insert at the beginning of the filtered group
+      const firstOfType = newFacetsList.findIndex(facet => 
+        isVertical ? facet.type === 'named-node' : facet.type !== 'named-node'
+      );
+      insertIndex = firstOfType === -1 ? newFacetsList.length : firstOfType;
+    } else {
+      // Find the facet that should be before our insertion point
+      const targetFacet = filteredFacets[newIndex - (oldIndex < newIndex ? 0 : 1)];
+      const targetIndex = newFacetsList.indexOf(targetFacet);
+      insertIndex = targetIndex + 1;
+    }
+    
+    // Insert the facet at the new position
+    newFacetsList.splice(insertIndex, 0, movedFacet);
+    
+    // Update the facets list
+    facetsList.value = newFacetsList;
+    
+    // Update current facet index if needed
+    if (currentFacetIndex.value === originalOldIndex) {
+      currentFacetIndex.value = insertIndex;
+    } else if (currentFacetIndex.value > originalOldIndex && currentFacetIndex.value < insertIndex) {
+      currentFacetIndex.value--;
+    } else if (currentFacetIndex.value < originalOldIndex && currentFacetIndex.value >= insertIndex) {
+      currentFacetIndex.value++;
+    }
+  }
+
   return {
     facetsList,
     horizontalFacets,
@@ -109,6 +169,7 @@ export const useSelectionController = defineStore("notice", () => {
     selectFacetByReference,
     getShareableUrl,
     initFromUrlParams,
+    reorderFacets,
   };
 });
 

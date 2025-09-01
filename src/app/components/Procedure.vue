@@ -1,43 +1,20 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { NTimeline, NTimelineItem } from 'naive-ui'
-import { getRequest, mapResponse } from '../../services/tedAPI.js'
 import { useSelectionController } from '../controllers/selectionController.js'
 import { createPublicationNumberFacet } from '../../facets/noticeQueries.js'
 
 const props = defineProps({
   procedureId: String,
   publicationNumbers: Array,
+  notices: Array, // Pre-fetched notices data
+  error: String, // Error from parent component
 })
-
-const loading = ref(false)
-const error = ref(null)
-const responseData = ref(null)
-
-async function fetchData () {
-  if (!props.procedureId) return
-
-  loading.value = true
-  error.value = null
-  try {
-    const { url, options } = await getRequest(props.procedureId)
-    const response = await fetch(url, options)
-    if (!response.ok) throw new Error(`API error: ${response.status}`)
-    responseData.value = await response.json()
-  } catch (err) {
-    error.value = err.message || 'Failed to fetch data'
-  } finally {
-    loading.value = false
-  }
-}
-
-fetchData()
 
 const selectionController = useSelectionController()
 
 const notices = computed(() => {
-  if (!responseData.value) return []
-  return mapResponse(responseData.value)
+  return props.notices || []
 })
 
 function handleClick (publicationNumber) {
@@ -50,12 +27,10 @@ const getType = (notice) => notice.noticeVersion ? 'warning' : 'success'
 </script>
 
 <template>
-  <div v-if="loading">Loading...</div>
-  <div v-else-if="error">{{ error }}</div>
-  <div v-else-if="notices.length" class="timeline-container">
+  <div v-if="error" class="error-message">{{ error }}</div>
+  <div v-else-if="notices.length">
     <div v-if="procedureId" class="procedure-id">
-      <div>Procedure:</div>
-      <div>{{ procedureId }}</div>
+      Procedure: {{ procedureId }}
     </div>
     <n-timeline horizontal class="timeline">
       <n-timeline-item
@@ -83,19 +58,12 @@ const getType = (notice) => notice.noticeVersion ? 'warning' : 'success'
 </template>
 
 <style scoped>
-.timeline-container {
-  display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-  gap: 20px;
-  padding: 20px;
-  margin-bottom: 15px;
-  border-bottom: 1px solid #e0e0e0;
-}
+
 
 .procedure-id {
-  flex-shrink: 0;
-  white-space: nowrap;
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 0.9em;
 }
 
 .timeline {
@@ -104,5 +72,13 @@ const getType = (notice) => notice.noticeVersion ? 'warning' : 'success'
 
 .timeline-item {
   cursor: pointer;
+}
+
+.error-message {
+  color: #d32f2f;
+  background: #ffebee;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 8px;
 }
 </style>

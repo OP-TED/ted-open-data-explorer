@@ -68,6 +68,5 @@ async function handleShare() {
 <style scoped>
 .bar {
   width: 100%;
-  padding: 8px;
 }
 </style>

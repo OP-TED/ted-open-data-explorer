@@ -12,7 +12,7 @@ const props = defineProps({
   },
   index: Number,
   isSelected: Boolean,
-  totalTriples: Number,
+
 })
 
 const emit = defineEmits(['select', 'remove'])
@@ -45,10 +45,7 @@ const facetLabel = computed(() => {
       <!-- Main label -->
       <span class="facet-label">{{ facetLabel }}</span>
 
-      <!-- Additional metadata -->
-      <template v-if="isSelected && totalTriples !== undefined">
-        <span class="triples-count">({{ totalTriples }} triples)</span>
-      </template>
+
 
       <!-- Maybe add a timestamp or other metadata -->
       <span v-if="facet.timestamp" class="timestamp">
@@ -86,10 +83,6 @@ const facetLabel = computed(() => {
   min-width: 0;
 }
 
-.triples-count {
-  font-size: 0.9em;
-  opacity: 0.85;
-}
 
 .timestamp {
   font-size: 0.8em;
