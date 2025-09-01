@@ -1,5 +1,15 @@
 <script setup>
-import { NSpace, NButton, NInput, NIcon, NCard, NConfigProvider, NMessageProvider, lightTheme, useMessage, } from 'naive-ui'
+import {
+  NSpace,
+  NButton,
+  NInput,
+  NIcon,
+  NCard,
+  NConfigProvider,
+  NMessageProvider,
+  lightTheme,
+  useMessage,
+} from 'naive-ui'
 import { ref, watch, computed, onMounted, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
 import { ShareSocialOutline as ShareIcon } from '@vicons/ionicons5'
@@ -24,7 +34,7 @@ const message = useMessage()
 
 const noticeNumber = ref('')
 
-function searchByNoticeNumber() {
+function searchByNoticeNumber () {
   if (!noticeNumber.value.trim()) {
     console.warn('Notice number is required')
     return
@@ -33,13 +43,12 @@ function searchByNoticeNumber() {
   if (facet) selectionController.selectFacet(facet)
 }
 
-async function handleSelectRandom() {
+async function handleSelectRandom () {
   noticeNumber.value = await getRandomPublicationNumber()
   searchByNoticeNumber()
 }
 
-
-async function handleShare() {
+async function handleShare () {
   const url = selectionController.getShareableUrl()
   if (url) {
     try {
@@ -62,7 +71,6 @@ const editorQuery = ref('')
 watch(currentFacet, async (newFacet) => {
   editorQuery.value = getQuery(newFacet)
 })
-
 
 const gridLayout = ref([
   { i: 'search', x: 0, y: 0, w: 6, h: 3, title: 'Search', component: 'search', collapsed: false },
@@ -92,7 +100,7 @@ async function toggleCollapse (itemId) {
     await nextTick()
     const newLayout = JSON.parse(JSON.stringify(gridLayout.value))
     gridLayout.value.splice(0, gridLayout.value.length, ...newLayout)
-    
+
     if (gridRef.value && gridRef.value.layoutUpdate) {
       gridRef.value.layoutUpdate()
     }
@@ -103,16 +111,16 @@ function onLayoutUpdated (newLayout) {
   gridLayout.value = newLayout
 }
 
-async function updateItemHeight(id, newHeight) {
+async function updateItemHeight (id, newHeight) {
   const item = gridLayout.value.find(item => item.i === id)
   if (item && item.h !== newHeight && !item.collapsed) {
-    
+
     requestAnimationFrame(async () => {
       item.h = newHeight
       await nextTick()
       const newLayout = JSON.parse(JSON.stringify(gridLayout.value))
       gridLayout.value.splice(0, gridLayout.value.length, ...newLayout)
-      
+
       if (gridRef.value && gridRef.value.layoutUpdate) {
         gridRef.value.layoutUpdate()
       }
@@ -183,7 +191,9 @@ const getDataTitle = computed(() => {
                     <button @click="toggleCollapse(item.i)" class="collapse-btn">
                       {{ item.collapsed ? '▶' : '▼' }}
                     </button>
-                    <span>{{ item.i === 'context' ? getContextTitle : (item.i === 'data' ? getDataTitle : item.title) }}</span>
+                    <span>{{
+                        item.i === 'context' ? getContextTitle : (item.i === 'data' ? getDataTitle : item.title)
+                      }}</span>
                   </div>
                   <div class="drag-handle">⋮⋮</div>
                 </div>
@@ -193,7 +203,8 @@ const getDataTitle = computed(() => {
                 <!-- Search Panel -->
                 <div v-if="item.component === 'search'" class="search-content">
                   <div class="search-inputs">
-                    <n-input v-model:value="noticeNumber" placeholder="Enter notice number" @keyup.enter="searchByNoticeNumber" />
+                    <n-input v-model:value="noticeNumber" placeholder="Enter notice number"
+                             @keyup.enter="searchByNoticeNumber"/>
                     <n-button secondary @click="searchByNoticeNumber" :loading="isLoading">
                       Search
                     </n-button>
@@ -209,8 +220,9 @@ const getDataTitle = computed(() => {
                 </div>
                 <!-- SPARQL Query Panel -->
                 <div v-else-if="item.component === 'query'" class="query-content">
-                  <sparql-editor v-model="editorQuery" :isLoading="isLoading" style="height: calc(100% - 50px);" />
-                  <n-button @click="doSparql(editorQuery)" :loading="isLoading" style="margin-top: 8px; align-self: flex-end;" >
+                  <sparql-editor v-model="editorQuery" :isLoading="isLoading" style="height: calc(100% - 50px);"/>
+                  <n-button @click="doSparql(editorQuery)" :loading="isLoading"
+                            style="margin-top: 8px; align-self: flex-end;">
                     Execute Query
                   </n-button>
                 </div>
@@ -225,7 +237,9 @@ const getDataTitle = computed(() => {
                 <!-- Context Panel (Procedures/Entities) -->
                 <div v-else-if="item.component === 'context'" class="context-content">
                   <div v-if="currentFacet?.type === 'notice-number' && currentFacet?.value">
-                    <Notice :publicationNumber="currentFacet.value" :procedureIds="results?.extracted?.procedureIds || []" :allPublicationNumbers="results?.extracted?.publicationNumbers || []" />
+                    <Notice :publicationNumber="currentFacet.value"
+                            :procedureIds="results?.extracted?.procedureIds || []"
+                            :allPublicationNumbers="results?.extracted?.publicationNumbers || []"/>
                   </div>
                   <div v-else class="placeholder">
                     Select a notice to see extracted entities and procedures
@@ -237,7 +251,8 @@ const getDataTitle = computed(() => {
                   <div v-else-if="isLoading" class="loading-message">Loading...</div>
                   <template v-else-if="results?.dataset && rdfPointer">
                     <div class="rdf-tree-container">
-                      <RdfTree :pointer="rdfPointer" :options="defaultOptions" :enableHighlighting="false" :enableRightClick="false" :termComponent="Term" />
+                      <RdfTree :pointer="rdfPointer" :options="defaultOptions" :enableHighlighting="false"
+                               :enableRightClick="false" :termComponent="Term"/>
                     </div>
                   </template>
                   <div v-else class="placeholder">
@@ -256,7 +271,6 @@ const getDataTitle = computed(() => {
 <style scoped>
 .navigator-app {
   padding: 20px;
-  max-width: 1400px;
   margin: 0 auto;
   height: 100vh;
 }
@@ -282,7 +296,6 @@ const getDataTitle = computed(() => {
 .header-left {
   display: flex;
   align-items: center;
-  gap: 8px;
 }
 
 .collapse-btn {
@@ -291,7 +304,7 @@ const getDataTitle = computed(() => {
   cursor: pointer;
   font-size: 12px;
   color: #666;
-  padding: 4px 8px;
+  padding-left: 8px;
   border-radius: 4px;
   transition: all 0.2s ease;
   user-select: none;
@@ -307,13 +320,11 @@ const getDataTitle = computed(() => {
   color: #666;
   transition: all 0.2s ease;
   user-select: none;
-  padding: 4px 8px;
   border-radius: 4px;
 }
 
 .drag-handle:hover {
   background-color: #f0f0f0;
-  color: #333;
 }
 
 .drag-handle:active {
@@ -331,7 +342,6 @@ const getDataTitle = computed(() => {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 12px;
 }
 
 .search-inputs {
@@ -373,7 +383,6 @@ const getDataTitle = computed(() => {
   color: #999;
   font-style: italic;
   text-align: center;
-  padding: 20px;
 }
 
 .error-message {
@@ -396,6 +405,7 @@ const getDataTitle = computed(() => {
     flex-direction: column;
     align-items: stretch;
   }
+
   .search-inputs {
     flex-direction: column;
   }
