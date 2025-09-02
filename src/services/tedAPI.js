@@ -56,7 +56,17 @@ function mapResponse (tedResponse) {
     })
   })
 
-  result.sort((a, b) => a.publicationNumber.localeCompare(b.publicationNumber))
+  result.sort((a, b) => {
+    const dateA = new Date(a.publicationDate)
+    const dateB = new Date(b.publicationDate)
+
+    // Handle invalid dates
+    if (isNaN(dateA.getTime()) || isNaN(dateB.getTime())) {
+      return 0
+    }
+
+    return dateB - dateA // Most recent first
+  })
   return result
 }
 
@@ -91,14 +101,14 @@ async function getNoticeByPublicationNumber (publicationNumber) {
 function extractProcedureIds (tedResponse) {
   const notices = tedResponse?.notices || []
   const procedureIds = new Set()
-  
+
   notices.forEach(notice => {
     const procedureId = notice['procedure-identifier']
     if (procedureId) {
       procedureIds.add(procedureId)
     }
   })
-  
+
   return Array.from(procedureIds)
 }
 
