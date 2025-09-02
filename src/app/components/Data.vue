@@ -1,13 +1,14 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
-import { NRadioGroup, NRadioButton } from 'naive-ui'
+import { NRadioGroup, NRadioButton, NButton, NIcon } from 'naive-ui'
+import { ChevronBackOutline, ChevronForwardOutline } from '@vicons/ionicons5'
 import { RdfTree } from 'rdf-tree'
 import 'rdf-tree/dist/rdf-tree.css'
 import grapoi from 'grapoi'
 import rdf from 'rdf-ext'
 import Term from './Term.vue'
 import TurtleEditor from './TurtleEditor.vue'
-import { defaultOptions } from '../controllers/selectionController.js'
+import { useSelectionController, defaultOptions } from '../controllers/selectionController.js'
 import { prettyPrint } from '../../serialization.js'
 import { ns } from '../../namespaces.js'
 
@@ -15,7 +16,11 @@ const props = defineProps({
   error: Object,
   isLoading: Boolean,
   dataset: Object,
+  previousFacet: Object,
+  nextFacet: Object,
 })
+
+const controller = useSelectionController()
 
 const viewMode = ref('tree')
 const turtleContent = ref('')
@@ -61,6 +66,19 @@ watch(() => props.dataset, () => {
 watch(tooManyTriples, (isTooMany) => {
   if (isTooMany) viewMode.value = 'turtle'
 }, { immediate: true })
+
+// Navigation methods
+function goToPrevious() {
+  if (props.previousFacet) {
+    controller.selectFacet(props.previousFacet)
+  }
+}
+
+function goToNext() {
+  if (props.nextFacet) {
+    controller.selectFacet(props.nextFacet)
+  }
+}
 </script>
 
 <template>
@@ -69,14 +87,36 @@ watch(tooManyTriples, (isTooMany) => {
     <div v-else-if="isLoading" class="loading-message">Loading...</div>
     <template v-else-if="dataset">
       <div class="data-header">
-        <n-radio-group v-model:value="viewMode" size="small">
-          <n-radio-button value="tree" :disabled="tooManyTriples">
-            Tree View
-          </n-radio-button>
-          <n-radio-button value="turtle" :disabled="isSerializing">
-            {{ isSerializing ? 'Serializing...' : 'Turtle' }}
-          </n-radio-button>
-        </n-radio-group>
+        <div class="header-top">
+          <div class="view-controls">
+            <div v-if="previousFacet || nextFacet" class="navigation-controls">
+              <n-button
+                  size="small"
+                  :disabled="!previousFacet"
+                  @click="goToPrevious"
+                  secondary
+              >
+                <n-icon><ChevronBackOutline /></n-icon>
+              </n-button>
+              <n-button
+                  size="small"
+                  :disabled="!nextFacet"
+                  @click="goToNext"
+                  secondary
+              >
+                <n-icon><ChevronForwardOutline /></n-icon>
+              </n-button>
+            </div>
+            <n-radio-group v-model:value="viewMode" size="small">
+              <n-radio-button value="tree" :disabled="tooManyTriples">
+                Tree View
+              </n-radio-button>
+              <n-radio-button value="turtle" :disabled="isSerializing">
+                {{ isSerializing ? 'Serializing...' : 'Turtle' }}
+              </n-radio-button>
+            </n-radio-group>
+          </div>
+        </div>
         <div v-if="tooManyTriples" class="too-many-triples-warning">
           Tree view disabled ({{ tripleCount.toLocaleString() }} triples > 7,000 limit)
         </div>
@@ -119,6 +159,23 @@ watch(tooManyTriples, (isTooMany) => {
   padding: 8px 0;
   border-bottom: 1px solid #e0e0e0;
   margin-bottom: 8px;
+}
+
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.view-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.navigation-controls {
+  display: flex;
+  gap: 4px;
 }
 
 .rdf-tree-container,

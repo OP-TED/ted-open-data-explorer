@@ -143,6 +143,22 @@ const getDataTitle = computed(() => {
   }
   return 'Data'
 })
+
+// Navigation facets for Data component
+const currentVerticalIndex = computed(() => {
+  if (!currentFacet.value || currentFacet.value.type !== 'named-node') return -1
+  return verticalFacets.value.findIndex(facet => facet === currentFacet.value)
+})
+
+const previousFacet = computed(() => {
+  if (currentVerticalIndex.value <= 0) return null
+  return verticalFacets.value[currentVerticalIndex.value - 1]
+})
+
+const nextFacet = computed(() => {
+  if (currentVerticalIndex.value === -1 || currentVerticalIndex.value >= verticalFacets.value.length - 1) return null
+  return verticalFacets.value[currentVerticalIndex.value + 1]
+})
 </script>
 
 <template>
@@ -235,7 +251,12 @@ const getDataTitle = computed(() => {
                   </div>
                 </div>
                 <!-- Data Panel (RDF Tree) -->
-                <Data v-else-if="item.component === 'data'" :error="error" :isLoading="isLoading" :dataset="results?.dataset" />
+                <Data v-else-if="item.component === 'data'" 
+                      :error="error" 
+                      :isLoading="isLoading" 
+                      :dataset="results?.dataset" 
+                      :previousFacet="previousFacet" 
+                      :nextFacet="nextFacet" />
               </div>
             </n-card>
           </AutoHeightItem>
