@@ -2,12 +2,10 @@
 import { computed, ref, watch } from 'vue'
 import { NCard, NCollapse, NCollapseItem } from 'naive-ui'
 import Procedure from './Procedure.vue'
-import { getRequest, mapResponse } from '../../services/tedAPI.js'
+import { getRequest, mapResponse, getNoticeByPublicationNumber, extractProcedureIds } from '../../services/tedAPI.js'
 
 const props = defineProps({
   publicationNumber: String,
-  procedureIds: Array, // Array of procedure IDs associated with this notice
-  allPublicationNumbers: Array, // All publication numbers for context
 })
 
 // State for managing procedure data for this notice
@@ -15,9 +13,16 @@ const proceduresData = ref([])
 const loading = ref(false)
 const error = ref(null)
 
+// State for notice metadata
+const noticeMetadata = ref({
+  publicationDate: null,
+  buyerCountry: null,
+  customizationId: null,
+})
+
 // Fetch procedure data for all procedures associated with this notice
 async function fetchProceduresData () {
-  if (!props.procedureIds?.length) {
+  if (!props.publicationNumber) {
     proceduresData.value = []
     return
   }
@@ -26,7 +31,31 @@ async function fetchProceduresData () {
   error.value = null
 
   try {
-    const procedurePromises = props.procedureIds.map(async (procedureId) => {
+    // Step 1: Get the notice to extract procedure identifiers and metadata
+    const { url: noticeUrl, options: noticeOptions } = await getNoticeByPublicationNumber(props.publicationNumber)
+    const noticeResponse = await fetch(noticeUrl, noticeOptions)
+    const noticeData = await noticeResponse.json()
+    
+    // Extract notice metadata
+    const firstNotice = noticeData?.notices?.[0]
+    if (firstNotice) {
+      noticeMetadata.value = {
+        publicationDate: firstNotice['publication-date'] || null,
+        buyerCountry: firstNotice['buyer-country']?.value || firstNotice['buyer-country'] || null,
+        customizationId: firstNotice['customization-id'] || null,
+      }
+    }
+    
+    // Step 2: Extract procedure IDs from the notice data
+    const procedureIds = extractProcedureIds(noticeData)
+    
+    if (!procedureIds.length) {
+      proceduresData.value = []
+      return
+    }
+
+    // Step 3: Fetch full procedure data for each procedure ID
+    const procedurePromises = procedureIds.map(async (procedureId) => {
       try {
         const { url, options } = await getRequest(procedureId)
         const response = await fetch(url, options)
@@ -57,8 +86,8 @@ async function fetchProceduresData () {
   }
 }
 
-// Watch for changes in procedureIds to fetch data
-watch(() => props.procedureIds, () => {
+// Watch for changes in publicationNumber to fetch data
+watch(() => props.publicationNumber, () => {
   fetchProceduresData()
 }, { immediate: true })
 
@@ -66,6 +95,11 @@ watch(() => props.procedureIds, () => {
 
 <template>
   <n-card size="small" class="notice-card">
+    <div v-if="noticeMetadata.publicationDate || noticeMetadata.buyerCountry || noticeMetadata.customizationId" class="notice-metadata">
+      <span v-if="noticeMetadata.publicationDate" class="metadata-item">{{ noticeMetadata.publicationDate }}</span>
+      <span v-if="noticeMetadata.buyerCountry" class="metadata-item">{{ noticeMetadata.buyerCountry }}</span>
+      <span v-if="noticeMetadata.customizationId" class="metadata-item">{{ noticeMetadata.customizationId }}</span>
+    </div>
     <div v-if="error" class="error-message">{{ error }}</div>
     <div v-else-if="loading" class="loading-message">Loading procedures...</div>
     <div v-else-if="proceduresData.length > 0" class="procedures-container">
@@ -73,7 +107,7 @@ watch(() => props.procedureIds, () => {
         <Procedure
             :procedureId="procedureData.procedureId"
             :notices="procedureData.notices"
-            :publicationNumbers="allPublicationNumbers"
+            :publicationNumbers="[props.publicationNumber]"
             :error="procedureData.error"
         />
       </template>
@@ -90,6 +124,18 @@ watch(() => props.procedureIds, () => {
 .notice-card {
   border: 1px solid #e0e0e0;
   border-radius: 8px;
+}
+
+.notice-metadata {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 8px;
+  font-size: 0.8em;
+  color: #666;
+}
+
+.metadata-item {
+  white-space: nowrap;
 }
 
 

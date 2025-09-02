@@ -17,7 +17,6 @@ import { GridLayout } from 'grid-layout-plus'
 import AutoHeightItem from './AutoHeightItem.vue'
 import { getQuery } from '../facets/facets.js'
 import Notice from './components/Notice.vue'
-import Term from './components/Term.vue'
 import Data from './components/Data.vue'
 import SparqlEditor from './components/SparqlEditor.vue'
 import FacetsList from './FacetsList.vue'
@@ -144,6 +143,22 @@ const getDataTitle = computed(() => {
   }
   return 'Data'
 })
+
+// Navigation facets for Data component
+const currentVerticalIndex = computed(() => {
+  if (!currentFacet.value || currentFacet.value.type !== 'named-node') return -1
+  return verticalFacets.value.findIndex(facet => facet === currentFacet.value)
+})
+
+const previousFacet = computed(() => {
+  if (currentVerticalIndex.value <= 0) return null
+  return verticalFacets.value[currentVerticalIndex.value - 1]
+})
+
+const nextFacet = computed(() => {
+  if (currentVerticalIndex.value === -1 || currentVerticalIndex.value >= verticalFacets.value.length - 1) return null
+  return verticalFacets.value[currentVerticalIndex.value + 1]
+})
 </script>
 
 <template>
@@ -230,16 +245,18 @@ const getDataTitle = computed(() => {
                 <!-- Context Panel (Procedures/Entities) -->
                 <div v-else-if="item.component === 'context'" class="context-content">
                   <div v-if="currentFacet?.type === 'notice-number' && currentFacet?.value">
-                    <Notice :publicationNumber="currentFacet.value"
-                            :procedureIds="results?.extracted?.procedureIds || []"
-                            :allPublicationNumbers="results?.extracted?.publicationNumbers || []"/>
+                    <Notice :publicationNumber="currentFacet.value"/>
                   </div>
                   <div v-else class="placeholder">
-                    Select a notice to see extracted entities and procedures
                   </div>
                 </div>
                 <!-- Data Panel (RDF Tree) -->
-                <Data v-else-if="item.component === 'data'" :error="error" :isLoading="isLoading" :dataset="results?.dataset" />
+                <Data v-else-if="item.component === 'data'" 
+                      :error="error" 
+                      :isLoading="isLoading" 
+                      :dataset="results?.dataset" 
+                      :previousFacet="previousFacet" 
+                      :nextFacet="nextFacet" />
               </div>
             </n-card>
           </AutoHeightItem>
