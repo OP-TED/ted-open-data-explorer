@@ -22,11 +22,11 @@ export function useFacetQuery() {
       results.value = null;
 
       const dataset = await doSPARQL(query);
-      const extracted = extractEntities({ dataset });
+      // const extracted = extractEntities({ dataset });
 
       results.value = {
         dataset,
-        extracted,
+        // extracted,
         stats: {
           triples: dataset.size,
           executionTime: Date.now() // Enhanced stats

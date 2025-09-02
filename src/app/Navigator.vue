@@ -17,7 +17,6 @@ import { GridLayout } from 'grid-layout-plus'
 import AutoHeightItem from './AutoHeightItem.vue'
 import { getQuery } from '../facets/facets.js'
 import Notice from './components/Notice.vue'
-import Term from './components/Term.vue'
 import Data from './components/Data.vue'
 import SparqlEditor from './components/SparqlEditor.vue'
 import FacetsList from './FacetsList.vue'
@@ -230,12 +229,9 @@ const getDataTitle = computed(() => {
                 <!-- Context Panel (Procedures/Entities) -->
                 <div v-else-if="item.component === 'context'" class="context-content">
                   <div v-if="currentFacet?.type === 'notice-number' && currentFacet?.value">
-                    <Notice :publicationNumber="currentFacet.value"
-                            :procedureIds="results?.extracted?.procedureIds || []"
-                            :allPublicationNumbers="results?.extracted?.publicationNumbers || []"/>
+                    <Notice :publicationNumber="currentFacet.value"/>
                   </div>
                   <div v-else class="placeholder">
-                    Select a notice to see extracted entities and procedures
                   </div>
                 </div>
                 <!-- Data Panel (RDF Tree) -->

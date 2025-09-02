@@ -60,4 +60,46 @@ function mapResponse (tedResponse) {
   return result
 }
 
-export { getRequest, mapResponse }
+async function getNoticeByPublicationNumber (publicationNumber) {
+  const requestBody = {
+    query: `publication-number="${publicationNumber}"`,
+    scope: 'ALL',
+    fields: [
+      'publication-number',
+      'publication-date',
+      'buyer-country',
+      'customization-id',
+      'procedure-identifier',
+    ],
+    limit: 10,
+  }
+
+  // Return the request configuration for useFetch to handle
+  return {
+    url: `${apiURL}/notices/search`,
+    options: {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    },
+  }
+}
+
+function extractProcedureIds (tedResponse) {
+  const notices = tedResponse?.notices || []
+  const procedureIds = new Set()
+  
+  notices.forEach(notice => {
+    const procedureId = notice['procedure-identifier']
+    if (procedureId) {
+      procedureIds.add(procedureId)
+    }
+  })
+  
+  return Array.from(procedureIds)
+}
+
+export { getRequest, mapResponse, getNoticeByPublicationNumber, extractProcedureIds }
