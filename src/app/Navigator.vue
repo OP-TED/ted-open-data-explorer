@@ -144,20 +144,20 @@ const getDataTitle = computed(() => {
   return 'Data'
 })
 
-// Navigation facets for Data component
-const currentVerticalIndex = computed(() => {
-  if (!currentFacet.value || currentFacet.value.type !== 'named-node') return -1
-  return verticalFacets.value.findIndex(facet => facet === currentFacet.value)
+// Navigation facets for Data component - navigate through ALL facets in order
+const currentFacetIndex = computed(() => {
+  if (!currentFacet.value) return -1
+  return selectionController.facetsList.findIndex(facet => facet === currentFacet.value)
 })
 
 const previousFacet = computed(() => {
-  if (currentVerticalIndex.value <= 0) return null
-  return verticalFacets.value[currentVerticalIndex.value - 1]
+  if (currentFacetIndex.value <= 0) return null
+  return selectionController.facetsList[currentFacetIndex.value - 1]
 })
 
 const nextFacet = computed(() => {
-  if (currentVerticalIndex.value === -1 || currentVerticalIndex.value >= verticalFacets.value.length - 1) return null
-  return verticalFacets.value[currentVerticalIndex.value + 1]
+  if (currentFacetIndex.value === -1 || currentFacetIndex.value >= selectionController.facetsList.length - 1) return null
+  return selectionController.facetsList[currentFacetIndex.value + 1]
 })
 </script>
 

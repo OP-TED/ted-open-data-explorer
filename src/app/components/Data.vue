@@ -34,6 +34,21 @@ const rdfPointer = computed(() => {
   return grapoi({ dataset: props.dataset, factory: rdf })
 })
 
+const cssClassifier = (entity, context = {}) => {
+  for (const type of entity.meta?.types) {
+
+    if (type.equals(ns.adms.Identifier)) {
+      return 'alternative'
+    }
+
+    if (type.value.endsWith('Term')) {
+      return 'alternative'
+    }
+  }
+
+  return null
+}
+
 async function serializeToTurtle () {
   if (!props.dataset) return
   isSerializing.value = true
@@ -68,13 +83,13 @@ watch(tooManyTriples, (isTooMany) => {
 }, { immediate: true })
 
 // Navigation methods
-function goToPrevious() {
+function goToPrevious () {
   if (props.previousFacet) {
     controller.selectFacet(props.previousFacet)
   }
 }
 
-function goToNext() {
+function goToNext () {
   if (props.nextFacet) {
     controller.selectFacet(props.nextFacet)
   }
@@ -96,7 +111,9 @@ function goToNext() {
                   @click="goToPrevious"
                   secondary
               >
-                <n-icon><ChevronBackOutline /></n-icon>
+                <n-icon>
+                  <ChevronBackOutline/>
+                </n-icon>
               </n-button>
               <n-button
                   size="small"
@@ -104,7 +121,9 @@ function goToNext() {
                   @click="goToNext"
                   secondary
               >
-                <n-icon><ChevronForwardOutline /></n-icon>
+                <n-icon>
+                  <ChevronForwardOutline/>
+                </n-icon>
               </n-button>
             </div>
             <n-radio-group v-model:value="viewMode" size="small">
@@ -130,6 +149,7 @@ function goToNext() {
             :enableHighlighting="false"
             :enableRightClick="false"
             :termComponent="Term"
+            :cssClassifier="cssClassifier"
         />
         <div v-else class="no-pointer-message">
           Unable to create tree view for this dataset.
@@ -146,86 +166,3 @@ function goToNext() {
     </div>
   </div>
 </template>
-
-<style scoped>
-.data-content {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.data-header {
-  padding: 8px 0;
-  border-bottom: 1px solid #e0e0e0;
-  margin-bottom: 8px;
-}
-
-.header-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.view-controls {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.navigation-controls {
-  display: flex;
-  gap: 4px;
-}
-
-.rdf-tree-container,
-.turtle-container {
-  flex: 1;
-  overflow-y: auto;
-  min-height: 0;
-}
-
-.serializing-message {
-  text-align: center;
-  color: #666;
-  padding: 20px;
-  font-style: italic;
-}
-
-.too-many-triples-warning {
-  margin-top: 8px;
-  padding: 8px 12px;
-  background: #fff3cd;
-  border: 1px solid #ffeaa7;
-  border-radius: 4px;
-  color: #856404;
-  font-size: 12px;
-}
-
-.no-pointer-message {
-  text-align: center;
-  color: #999;
-  padding: 20px;
-  font-style: italic;
-}
-
-.placeholder {
-  color: #999;
-  font-style: italic;
-  text-align: center;
-}
-
-.error-message {
-  color: #d32f2f;
-  background: #ffebee;
-  padding: 12px;
-  border-radius: 6px;
-  margin-bottom: 8px;
-}
-
-.loading-message {
-  text-align: center;
-  color: #666;
-  padding: 20px;
-}
-</style>
