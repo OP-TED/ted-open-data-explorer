@@ -35,16 +35,24 @@ const rdfPointer = computed(() => {
 })
 
 const cssClassifier = (entity, context = {}) => {
-  for (const type of entity.meta?.types) {
 
-    if (type.equals(ns.adms.Identifier)) {
-      return 'alternative'
-    }
-
-    if (type.value.endsWith('Term')) {
-      return 'alternative'
-    }
+  if (context.incomingProperty?.value.endsWith('Criterion')) {
+    return 'vertical-values'
   }
+
+  // for (const type of entity.meta?.types) {
+  //
+  //   if (type.equals(ns.adms.Identifier)) {
+  //     return 'vertical-properties'
+  //   }
+  //   if (type.value.endsWith('Term')) {
+  //     return 'vertical-properties'
+  //   }
+  //   if (type.value.endsWith('Criterion')) {
+  //     return 'vertical-properties'
+  //   }
+  //
+  // }
 
   return null
 }
