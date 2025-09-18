@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { NRadioGroup, NRadioButton, NButton, NIcon } from 'naive-ui'
 import { ChevronBackOutline, ChevronForwardOutline } from '@vicons/ionicons5'
-import { RdfTree } from 'rdf-tree'
+import { RdfTree } from '../../../node_modules/rdf-tree'
 import 'rdf-tree/dist/rdf-tree.css'
 import grapoi from 'grapoi'
 import rdf from 'rdf-ext'
@@ -34,27 +34,32 @@ const rdfPointer = computed(() => {
   return grapoi({ dataset: props.dataset, factory: rdf })
 })
 
-const cssClassifier = (entity, context = {}) => {
-
-  if (context.incomingProperty?.value.endsWith('Criterion')) {
-    return 'vertical-values'
+const cssClassifier = (row, context = {}) => {
+  console.log(row)
+  // console.log(row)
+  if (row.predicate?.value ===  ns.epo.isSubjectToLotSpecificTerm.value) {
+   console.log('HIT')
+    return 'vertical'
   }
-
-  // for (const type of entity.meta?.types) {
-  //
-  //   if (type.equals(ns.adms.Identifier)) {
-  //     return 'vertical-properties'
-  //   }
-  //   if (type.value.endsWith('Term')) {
-  //     return 'vertical-properties'
-  //   }
-  //   if (type.value.endsWith('Criterion')) {
-  //     return 'vertical-properties'
-  //   }
-  //
-  // }
-
+  // return 'vertical'
   return null
+
+  // // Property-based classification: Check the predicate of this row
+
+  //
+  // // Object-based classification: Check if any of the values are Address entities
+  // if (row.values?.some(value =>
+  //     value.meta?.types?.some(type => type.value === 'http://schema.org/Address') ||
+  //     value.term?.value?.includes('address')
+  // )) {
+  //   return 'address'
+  // }
+  //
+  // // console.log(row)
+  // // if (row.predicate?.value.endsWith('identifier')) {
+  // //   return 'vertical'
+  // // }
+  // return null
 }
 
 async function serializeToTurtle () {

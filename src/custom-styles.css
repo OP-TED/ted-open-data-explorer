@@ -80,70 +80,20 @@
 }
 
 
-.vertical-properties-entity {
+.vertical-row {
+    background-color: rgba(147, 51, 234, 0.1);
+    border-left: 3px solid rgb(147, 51, 234);
 }
 
-.vertical-properties-entity .vertical-properties-entity-header {
-    text-align: center;
-
+.vertical-property {
+    background-color: rgba(147, 51, 234, 0.2);
+    border-radius: 4px;
 }
 
-.vertical-properties-entity .vertical-properties-rows {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 5px;
-    margin: 5px;
-}
-
-.vertical-properties-entity .vertical-properties-rows > .row {
+.vertical-value {
+    background-color: rgba(147, 51, 234, 0.05);
     display: flex;
-    flex-direction: column;
-    /*padding: 10px;*/
-    align-items: flex-start;
-    border: 1px dashed var(--border);
-    border-radius: 10px;
-}
-
-.vertical-properties-entity .row > .property {
-    min-width: auto;
-    align-self: flex-start;
-}
-
-.vertical-properties-entity .row > .value {
-}
-
-
-
-/* Values entity styling - horizontal layout */
-.vertical-values-entity {
-    display: flex;              /* let items align horizontally */
-    flex-wrap: wrap;            /* allow wrapping */
-    gap: 5px;                   /* consistent spacing between items */
-    padding: 4px;               /* optional, match vertical */
-    border: 1px dashed var(--border); /* optional, match style */
-    border-radius: 10px;        /* optional, match style */
-}
-
-/* When a row contains values entity */
-.row:has(.vertical-values-entity) .value {
-    display: flex !important;
-    flex-direction: row !important;
-    flex-wrap: wrap !important;
-    align-items: center;        /* keep items vertically centered */
-    gap: 5px;                   /* consistent spacing */
-    margin: 5px 0;              /* space around */
-}
-
-.row:has(.vertical-values-entity) .value li {
-    list-style: none !important;
-    margin: 0 !important;
-    padding: 0;                 /* remove list padding */
-}
-
-/* Links inside horizontal entities */
-.vertical-values-entity a {
-    text-decoration: none;
-    display: inline-flex;        /* keep icon+text aligned */
-    align-items: center;
-    gap: 3px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
 }

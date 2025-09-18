@@ -12,16 +12,16 @@ const props = defineProps({
 const controller = useSelectionController()
 const namespaces = { ...ns }
 
-function getDatatype(term) {
+function getDatatype (term) {
   if (!term.datatype) return ''
   return term.datatype.value.split('#').pop() || 'NONE'
 }
 
-function getLanguage(term) {
+function getLanguage (term) {
   return term.language || ''
 }
 
-function resolvePrefix(value) {
+function resolvePrefix (value) {
   for (const [prefix, namespace] of Object.entries(namespaces)) {
     const base = namespace().value
     if (value.startsWith(base)) {
@@ -33,18 +33,16 @@ function resolvePrefix(value) {
     }
   }
 
-
-
-  return { display: value.replaceAll('http://publications.europa.eu/resource/authority/',''), href: value }
+  return { display: value.replaceAll('http://publications.europa.eu/resource/authority/', ''), href: value }
 }
 
 const namedNodeDisplay = computed(() =>
     props.term.termType === 'NamedNode'
         ? resolvePrefix(props.term.value)
-        : undefined
+        : undefined,
 )
 
-function selectNamedNode(term) {
+function selectNamedNode (term) {
   controller.selectFacet({
     type: 'named-node',
     term,
@@ -53,13 +51,13 @@ function selectNamedNode(term) {
 
 const showAsIcon = computed(() =>
     props.term.termType === 'NamedNode' &&
-    props.term.value.startsWith('http://data.europa.eu/a4g/resource/')
+    props.term.value.startsWith('http://data.europa.eu/a4g/resource/'),
 )
 </script>
 
 <template>
   <div>
-    <span><slot /></span>
+    <span><slot/></span>
 
     <template v-if="namedNodeDisplay">
       <a
@@ -70,7 +68,7 @@ const showAsIcon = computed(() =>
         <template v-if="showAsIcon">
           <!-- ✅ Naive UI handles sizing here -->
           <NIcon size="14" class="text-gray-500">
-            <LinkIcon />
+            <LinkIcon/>
           </NIcon>
         </template>
         <template v-else>

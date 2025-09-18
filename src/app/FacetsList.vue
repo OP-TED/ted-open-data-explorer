@@ -7,8 +7,8 @@ import Facet from './Facet.vue'
 const props = defineProps({
   facets: {
     type: Array,
-    required: true
-  }
+    required: true,
+  },
 })
 
 const selectionController = useSelectionController()
@@ -23,11 +23,11 @@ watchEffect(() => {
 
 })
 
-function handleSelect(facet) {
+function handleSelect (facet) {
   selectionController.selectFacetByReference(facet)
 }
 
-function handleRemove(facet) {
+function handleRemove (facet) {
   const index = selectionController.facetsList.indexOf(facet)
   if (index !== -1) {
     selectionController.removeFacet(index)
@@ -45,16 +45,16 @@ onMounted(() => {
 <template>
   <div v-if="localFacets.length > 0" class="facets-container">
     <div
-      v-for="facet in localFacets"
-      :key="facet.timestamp || facet.term?.value || facet.value"
-      class="facet-wrapper"
+        v-for="facet in localFacets"
+        :key="facet.timestamp || facet.term?.value || facet.value"
+        class="facet-wrapper"
     >
       <Facet
-        :facet="facet"
-        :is-selected="currentFacet === facet"
-        :total-triples="currentFacet === facet ? results?.stats?.triples : undefined"
-        @select="() => handleSelect(facet)"
-        @remove="() => handleRemove(facet)"
+          :facet="facet"
+          :is-selected="currentFacet === facet"
+          :total-triples="currentFacet === facet ? results?.stats?.triples : undefined"
+          @select="() => handleSelect(facet)"
+          @remove="() => handleRemove(facet)"
       />
     </div>
   </div>
