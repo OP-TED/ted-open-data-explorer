@@ -35,13 +35,13 @@ watch(tooManyTriples, (isTooMany) => {
 }, { immediate: true })
 
 // Navigation methods
-function goToPrevious() {
+function goToPrevious () {
   if (props.previousFacet) {
     controller.selectFacet(props.previousFacet)
   }
 }
 
-function goToNext() {
+function goToNext () {
   if (props.nextFacet) {
     controller.selectFacet(props.nextFacet)
   }
@@ -63,7 +63,9 @@ function goToNext() {
                   @click="goToPrevious"
                   secondary
               >
-                <n-icon><ChevronBackOutline /></n-icon>
+                <n-icon>
+                  <ChevronBackOutline/>
+                </n-icon>
               </n-button>
               <n-button
                   size="small"
@@ -71,7 +73,9 @@ function goToNext() {
                   @click="goToNext"
                   secondary
               >
-                <n-icon><ChevronForwardOutline /></n-icon>
+                <n-icon>
+                  <ChevronForwardOutline/>
+                </n-icon>
               </n-button>
             </div>
             <n-radio-group v-model:value="viewMode" size="small">

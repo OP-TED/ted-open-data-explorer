@@ -1,0 +1,144 @@
+.data-content {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.data-header {
+    padding: 8px 0;
+    border-bottom: 1px solid #e0e0e0;
+    margin-bottom: 8px;
+}
+
+.header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.view-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.navigation-controls {
+    display: flex;
+    gap: 4px;
+}
+
+.rdf-tree-container,
+.turtle-container {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.serializing-message {
+    text-align: center;
+    color: #666;
+    padding: 20px;
+    font-style: italic;
+}
+
+.too-many-triples-warning {
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 4px;
+    color: #856404;
+    font-size: 12px;
+}
+
+.no-pointer-message {
+    text-align: center;
+    color: #999;
+    padding: 20px;
+    font-style: italic;
+}
+
+.placeholder {
+    color: #999;
+    font-style: italic;
+    text-align: center;
+}
+
+.error-message {
+    color: #d32f2f;
+    background: #ffebee;
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+}
+
+.loading-message {
+    text-align: center;
+    color: #666;
+    padding: 20px;
+}
+
+
+/*rdf:Type*/
+
+.rdf_type-value {
+    display: flex;
+    flex-direction: row; /* default: left to right */
+    flex-wrap: wrap;
+    justify-content: flex-start; /* stick items to the left */
+    gap: 50px; /* adjust spacing between items */
+}
+
+/*links with maximum length*/
+
+.entity-header a {
+    display: inline-block;
+    max-width: 300px; /* adjust */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    direction: rtl; /* reverse text flow */
+    text-align: left; /* fix alignment so the end stays visible */
+    font-size: .8rem;
+}
+
+.entity-header {
+    /*display: none;*/
+}
+
+
+.vertical-row {
+}
+
+.vertical-property {
+    border-radius: 4px;
+}
+
+.vertical-value {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.vertical-value .entity {
+    border-right: 1px solid rgb(147, 51, 234);
+    width: 330px;
+    border-radius: 10px;
+}
+
+.vertical-value .entity-header > div {
+    margin: 0px;
+}
+
+.vertical-value .entity-header {
+    max-height: 50px;
+}
+.vertical-value .entity-header a {
+    max-width: 50px;
+}
+
+.rounded-value .entity {
+    border-radius: 10px;
+}

@@ -1,64 +1,68 @@
-<script setup xmlns="http://www.w3.org/1999/html">
-
+<script setup>
 import { ns } from '../../namespaces.js'
 import { computed } from 'vue'
 import { useSelectionController } from '../controllers/selectionController.js'
 
 const props = defineProps({
-  term: Object,
-})
-
-function getDatatype (term) {
-  function shrink (x) {
-    return x ? x.split('#').pop() : 'NONE'
-  }
-
-  return term.datatype ? shrink(term.datatype.value) : ''
-}
-
-function getLanguage (term) {
-  return term.language
-}
-
-const knownNamespaces = { ...ns }
-
-function guessPrefix (value) {
-  for (const [prefix, namespace] of Object.entries(knownNamespaces)) {
-    const startURL = namespace().value
-    if (value.startsWith(startURL)) {
-      return { prefix, display: value.replaceAll(startURL, ''), href: value }
-    }
-  }
-  return { display: value, href: value }
-}
-
-const namedNodeDisplay = computed(() => {
-  return props.term.termType === 'NamedNode' ? guessPrefix(props.term.value) : undefined
+  term: { type: Object, required: true },
 })
 
 const controller = useSelectionController()
+const namespaces = { ...ns }
 
-function selectNamed (term) {
+function getDatatype (term) {
+  if (!term.datatype) return ''
+  return term.datatype.value.split('#').pop() || 'NONE'
+}
+
+function getLanguage (term) {
+  return term.language || ''
+}
+
+function resolvePrefix (value) {
+  for (const [prefix, namespace] of Object.entries(namespaces)) {
+    const base = namespace().value
+    if (value.startsWith(base)) {
+      return {
+        prefix,
+        display: value.replace(base, ''),
+        href: value,
+      }
+    }
+  }
+
+  return { display: value.replaceAll('http://publications.europa.eu/resource/authority/', ''), href: value }
+}
+
+const namedNodeDisplay = computed(() =>
+    props.term.termType === 'NamedNode'
+        ? resolvePrefix(props.term.value)
+        : undefined,
+)
+
+function selectNamedNode (term) {
   controller.selectFacet({
     type: 'named-node',
     term,
   })
 }
+
 </script>
 <template>
   <div>
-    <span>
-      <slot></slot>
-    </span>
-
+    <span><slot/></span>
     <template v-if="namedNodeDisplay">
-      <a :href="namedNodeDisplay.href" @click.prevent="selectNamed(term)">
-        <span v-if="namedNodeDisplay.prefix" class="vocab">
-          {{ namedNodeDisplay.prefix }}:{{ namedNodeDisplay.display }}
-        </span>
-        <span v-else>
-          {{ namedNodeDisplay.display }}
-        </span>
+      <a
+          :href="namedNodeDisplay.href"
+          @click.prevent="selectNamedNode(term)"
+          class="inline-flex items-center"
+      >
+          <span v-if="namedNodeDisplay.prefix" class="vocab">
+            {{ namedNodeDisplay.prefix }}:{{ namedNodeDisplay.display }}
+          </span>
+          <span v-else>
+            {{ namedNodeDisplay.display }}
+          </span>
       </a>
     </template>
 
@@ -69,5 +73,3 @@ function selectNamed (term) {
     </template>
   </div>
 </template>
-
-

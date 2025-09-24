@@ -7,7 +7,7 @@ import {
   useMessage,
 } from 'naive-ui'
 import { ref } from 'vue'
-import { ShareSocialOutline as ShareIcon } from '@vicons/ionicons5';
+import { ShareSocialOutline as ShareIcon } from '@vicons/ionicons5'
 import { storeToRefs } from 'pinia'
 import { createPublicationNumberFacet } from '../facets/noticeQueries.js'
 import { getRandomPublicationNumber } from '../services/randomNoticeService.js'
@@ -19,17 +19,17 @@ const { currentFacet } = storeToRefs(selectionController)
 
 const noticeNumber = ref('')
 
-function searchByNoticeNumber() {
+function searchByNoticeNumber () {
   const facet = createPublicationNumberFacet(noticeNumber.value)
   if (facet) selectionController.selectFacet(facet)
 }
 
-async function handleSelectRandom() {
+async function handleSelectRandom () {
   noticeNumber.value = await getRandomPublicationNumber()
   searchByNoticeNumber()
 }
 
-async function handleShare() {
+async function handleShare () {
   const url = selectionController.getShareableUrl()
   if (url) {
     try {
@@ -45,11 +45,11 @@ async function handleShare() {
 <template>
   <n-space justify="space-between" align="center" class="bar">
     <n-space>
-    <n-input
-        v-model:value="noticeNumber"
-        placeholder="Enter notice number"
-        @keyup.enter="searchByNoticeNumber"
-    />
+      <n-input
+          v-model:value="noticeNumber"
+          placeholder="Enter notice number"
+          @keyup.enter="searchByNoticeNumber"
+      />
 
       <n-button secondary @click="searchByNoticeNumber">Search</n-button>
       <n-button secondary size="tiny" @click="handleSelectRandom">Random</n-button>
@@ -60,7 +60,9 @@ async function handleShare() {
         type="primary"
         @click="handleShare"
     >
-      <n-icon><ShareIcon /></n-icon>
+      <n-icon>
+        <ShareIcon/>
+      </n-icon>
     </n-button>
   </n-space>
 </template>
