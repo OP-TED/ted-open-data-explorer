@@ -6,6 +6,7 @@ import grapoi from 'grapoi'
 import rdf from 'rdf-ext'
 import Term from './Term.vue'
 import { defaultOptions } from '../controllers/selectionController.js'
+import { cssClassifier } from '../../customStyleSelector.js'
 
 const props = defineProps({
   dataset: Object,
@@ -27,6 +28,7 @@ const rdfPointer = computed(() => {
         :enableHighlighting="false"
         :enableRightClick="false"
         :termComponent="Term"
+        :cssClassifier="cssClassifier"
     />
     <div v-else class="no-pointer-message">
       Unable to create tree view for this dataset.
