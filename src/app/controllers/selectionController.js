@@ -2,13 +2,13 @@ import { useStorage } from "@vueuse/core";
 import { defineStore } from "pinia";
 import { computed, ref, watch } from "vue";
 import { getQuery } from "../../facets/facets.js";
-import { 
-  facetEquals, 
-  addUnique, 
-  removeAt, 
-  adjustIndex, 
-  shouldClearResults, 
-  shouldSelectFacet 
+import {
+  facetEquals,
+  addUnique,
+  removeAt,
+  adjustIndex,
+  shouldClearResults,
+  shouldSelectFacet
 } from "../../facets/facetLogic.js";
 
 import { ns } from "../../namespaces.js";
@@ -18,9 +18,13 @@ import { useFacetQuery } from "../../composables/useFacetQuery.js";
 const defaultOptions = {
   ignoreNamedGraphs: true,
   matchers: [
+
     { predicate: ns.rdf.type, object: ns.epo.ChangeInformation },
     { predicate: ns.rdf.type, object: ns.epo.ResultNotice },
     { predicate: ns.rdf.type, object: ns.epo.Notice },
+
+    { predicate: ns.epo.specifiesProcurementCriterion },
+
     {},
   ],
 };
@@ -29,7 +33,7 @@ export const useSelectionController = defineStore("notice", () => {
   // Composables
   const { getShareableUrl: generateShareableUrl, initFromUrlParams: initFromUrl } = useUrlFacetParams();
   const { isLoading, error, results, executeQuery, clearResults } = useFacetQuery();
-  
+
   // Store-specific state
   const facetsList = useStorage("facets-v2", [
     // Add some test facets for drag and drop testing
@@ -48,11 +52,11 @@ export const useSelectionController = defineStore("notice", () => {
   );
 
   // Separate facets by type for different layouts
-  const horizontalFacets = computed(() => 
+  const horizontalFacets = computed(() =>
     facetsList.value.filter(facet => facet.type !== 'named-node')
   );
 
-  const verticalFacets = computed(() => 
+  const verticalFacets = computed(() =>
     facetsList.value.filter(facet => facet.type === 'named-node')
   );
 
@@ -75,7 +79,7 @@ export const useSelectionController = defineStore("notice", () => {
     const originalIndex = currentFacetIndex.value;
     const newFacets = removeAt(facetsList.value, index);
     const newIndex = adjustIndex(originalIndex, index, newFacets.length);
-    
+
     facetsList.value = newFacets;
     currentFacetIndex.value = newIndex;
 
@@ -109,26 +113,26 @@ export const useSelectionController = defineStore("notice", () => {
   function reorderFacets(oldIndex, newIndex, facetType) {
     // Get the correct facet list based on type
     const isVertical = facetType === 'vertical';
-    const filteredFacets = isVertical 
+    const filteredFacets = isVertical
       ? facetsList.value.filter(facet => facet.type === 'named-node')
       : facetsList.value.filter(facet => facet.type !== 'named-node');
-    
+
     // Get the facet being moved
     const movedFacet = filteredFacets[oldIndex];
     if (!movedFacet) return;
-    
+
     // Find the original indices in the full facets list
     const originalOldIndex = facetsList.value.indexOf(movedFacet);
-    
+
     // Remove the facet from its current position
     const newFacetsList = [...facetsList.value];
     newFacetsList.splice(originalOldIndex, 1);
-    
+
     // Find where to insert it based on the filtered list
     let insertIndex;
     if (newIndex === 0) {
       // Insert at the beginning of the filtered group
-      const firstOfType = newFacetsList.findIndex(facet => 
+      const firstOfType = newFacetsList.findIndex(facet =>
         isVertical ? facet.type === 'named-node' : facet.type !== 'named-node'
       );
       insertIndex = firstOfType === -1 ? newFacetsList.length : firstOfType;
@@ -138,13 +142,13 @@ export const useSelectionController = defineStore("notice", () => {
       const targetIndex = newFacetsList.indexOf(targetFacet);
       insertIndex = targetIndex + 1;
     }
-    
+
     // Insert the facet at the new position
     newFacetsList.splice(insertIndex, 0, movedFacet);
-    
+
     // Update the facets list
     facetsList.value = newFacetsList;
-    
+
     // Update current facet index if needed
     if (currentFacetIndex.value === originalOldIndex) {
       currentFacetIndex.value = insertIndex;

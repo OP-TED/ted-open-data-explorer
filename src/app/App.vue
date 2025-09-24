@@ -4,6 +4,7 @@ import {
   NConfigProvider,
   NMessageProvider,
 } from 'naive-ui'
+import '../custom-styles.css'
 
 import Navigator from './Navigator.vue'
 
