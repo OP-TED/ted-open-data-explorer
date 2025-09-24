@@ -11,6 +11,7 @@ import TurtleEditor from './TurtleEditor.vue'
 import { useSelectionController, defaultOptions } from '../controllers/selectionController.js'
 import { prettyPrint } from '../../serialization.js'
 import { ns } from '../../namespaces.js'
+import { cssClassifier } from '../../customStyleSelector.js'
 
 const props = defineProps({
   error: Object,
@@ -33,34 +34,6 @@ const rdfPointer = computed(() => {
   if (!props.dataset || tooManyTriples.value) return null
   return grapoi({ dataset: props.dataset, factory: rdf })
 })
-
-const cssClassifier = (row, context = {}) => {
-  console.log(row)
-  // console.log(row)
-  if (row.predicate?.value ===  ns.epo.isSubjectToLotSpecificTerm.value) {
-   console.log('HIT')
-    return 'vertical'
-  }
-  // return 'vertical'
-  return null
-
-  // // Property-based classification: Check the predicate of this row
-
-  //
-  // // Object-based classification: Check if any of the values are Address entities
-  // if (row.values?.some(value =>
-  //     value.meta?.types?.some(type => type.value === 'http://schema.org/Address') ||
-  //     value.term?.value?.includes('address')
-  // )) {
-  //   return 'address'
-  // }
-  //
-  // // console.log(row)
-  // // if (row.predicate?.value.endsWith('identifier')) {
-  // //   return 'vertical'
-  // // }
-  // return null
-}
 
 async function serializeToTurtle () {
   if (!props.dataset) return

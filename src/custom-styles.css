@@ -80,20 +80,65 @@
 }
 
 
+/*rdf:Type*/
+
+.rdf_type-value {
+    display: flex;
+    flex-direction: row; /* default: left to right */
+    flex-wrap: wrap;
+    justify-content: flex-start; /* stick items to the left */
+    gap: 50px; /* adjust spacing between items */
+}
+
+/*links with maximum length*/
+
+.entity-header a {
+    display: inline-block;
+    max-width: 300px; /* adjust */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    direction: rtl; /* reverse text flow */
+    text-align: left; /* fix alignment so the end stays visible */
+    font-size: .8rem;
+}
+
+.entity-header {
+    /*display: none;*/
+}
+
+
 .vertical-row {
-    background-color: rgba(147, 51, 234, 0.1);
-    border-left: 3px solid rgb(147, 51, 234);
 }
 
 .vertical-property {
-    background-color: rgba(147, 51, 234, 0.2);
     border-radius: 4px;
 }
 
 .vertical-value {
-    background-color: rgba(147, 51, 234, 0.05);
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 10px;
+}
+
+.vertical-value .entity {
+    border-right: 1px solid rgb(147, 51, 234);
+    width: 330px;
+    border-radius: 10px;
+}
+
+.vertical-value .entity-header > div {
+    margin: 0px;
+}
+
+.vertical-value .entity-header {
+    max-height: 50px;
+}
+.vertical-value .entity-header a {
+    max-width: 50px;
+}
+
+.rounded-value .entity {
+    border-radius: 10px;
 }

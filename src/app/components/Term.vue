@@ -2,8 +2,6 @@
 import { ns } from '../../namespaces.js'
 import { computed } from 'vue'
 import { useSelectionController } from '../controllers/selectionController.js'
-import { NIcon } from 'naive-ui'
-import { LinkOutline as LinkIcon } from '@vicons/ionicons5'
 
 const props = defineProps({
   term: { type: Object, required: true },
@@ -49,36 +47,22 @@ function selectNamedNode (term) {
   })
 }
 
-const showAsIcon = computed(() =>
-    props.term.termType === 'NamedNode' &&
-    props.term.value.startsWith('http://data.europa.eu/a4g/resource/'),
-)
 </script>
-
 <template>
   <div>
     <span><slot/></span>
-
     <template v-if="namedNodeDisplay">
       <a
           :href="namedNodeDisplay.href"
           @click.prevent="selectNamedNode(term)"
           class="inline-flex items-center"
       >
-        <template v-if="showAsIcon">
-          <!-- ✅ Naive UI handles sizing here -->
-          <NIcon size="14" class="text-gray-500">
-            <LinkIcon/>
-          </NIcon>
-        </template>
-        <template v-else>
           <span v-if="namedNodeDisplay.prefix" class="vocab">
             {{ namedNodeDisplay.prefix }}:{{ namedNodeDisplay.display }}
           </span>
           <span v-else>
             {{ namedNodeDisplay.display }}
           </span>
-        </template>
       </a>
     </template>
 
