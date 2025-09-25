@@ -2,6 +2,7 @@
 import { ns } from '../../namespaces.js'
 import { computed } from 'vue'
 import { useSelectionController } from '../controllers/selectionController.js'
+import { useLabelRef } from '../../composables/useLabelResolver.js'
 
 const props = defineProps({
   term: { type: Object, required: true },
@@ -31,7 +32,7 @@ function resolvePrefix (value) {
     }
   }
 
-  return { display: value.replaceAll('http://publications.europa.eu/resource/authority/', ''), href: value }
+  return { display: value, href: value }
 }
 
 const namedNodeDisplay = computed(() =>
@@ -39,6 +40,14 @@ const namedNodeDisplay = computed(() =>
         ? resolvePrefix(props.term.value)
         : undefined,
 )
+
+// URI for label resolution (only for NamedNodes)
+const uriForLabel = computed(() =>
+    props.term.termType === 'NamedNode' ? props.term.value : null,
+)
+
+// Use label resolver for EU authority URIs
+const { label: resolvedLabel, isLoading: labelLoading } = useLabelRef(uriForLabel)
 
 function selectNamedNode (term) {
   controller.selectFacet({
@@ -57,12 +66,21 @@ function selectNamedNode (term) {
           @click.prevent="selectNamedNode(term)"
           class="inline-flex items-center"
       >
-          <span v-if="namedNodeDisplay.prefix" class="vocab">
-            {{ namedNodeDisplay.prefix }}:{{ namedNodeDisplay.display }}
-          </span>
-          <span v-else>
-            {{ namedNodeDisplay.display }}
-          </span>
+        <!-- Show resolved label if available, otherwise fallback to prefix/display -->
+        <span v-if="resolvedLabel" class="label" :title="namedNodeDisplay.href">
+          {{ resolvedLabel }}
+        </span>
+        <span v-else-if="namedNodeDisplay.prefix" class="vocab">
+          {{ namedNodeDisplay.prefix }}:{{ namedNodeDisplay.display }}
+        </span>
+        <span v-else>
+          {{ namedNodeDisplay.display }}
+        </span>
+
+        <!-- Optional loading indicator for labels -->
+        <span v-if="labelLoading && !resolvedLabel" class="loading-indicator" title="Loading label...">
+          ⏳
+        </span>
       </a>
     </template>
 
@@ -73,3 +91,25 @@ function selectNamedNode (term) {
     </template>
   </div>
 </template>
+
+<style scoped>
+.label {
+  font-weight: 500;
+}
+
+.vocab {
+  font-family: monospace;
+}
+
+.loading-indicator {
+  margin-left: 4px;
+  font-size: 0.75em;
+  opacity: 0.7;
+}
+
+.datatype, .language {
+  font-size: 0.75em;
+  opacity: 0.6;
+  margin-left: 4px;
+}
+</style>

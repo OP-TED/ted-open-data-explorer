@@ -35,7 +35,7 @@ async function fetchProceduresData () {
     const { url: noticeUrl, options: noticeOptions } = await getNoticeByPublicationNumber(props.publicationNumber)
     const noticeResponse = await fetch(noticeUrl, noticeOptions)
     const noticeData = await noticeResponse.json()
-    
+
     // Extract notice metadata
     const firstNotice = noticeData?.notices?.[0]
     if (firstNotice) {
@@ -45,10 +45,10 @@ async function fetchProceduresData () {
         customizationId: firstNotice['customization-id'] || null,
       }
     }
-    
+
     // Step 2: Extract procedure IDs from the notice data
     const procedureIds = extractProcedureIds(noticeData)
-    
+
     if (!procedureIds.length) {
       proceduresData.value = []
       return
@@ -95,7 +95,8 @@ watch(() => props.publicationNumber, () => {
 
 <template>
   <n-card size="small" class="notice-card">
-    <div v-if="noticeMetadata.publicationDate || noticeMetadata.buyerCountry || noticeMetadata.customizationId" class="notice-metadata">
+    <div v-if="noticeMetadata.publicationDate || noticeMetadata.buyerCountry || noticeMetadata.customizationId"
+         class="notice-metadata">
       <span v-if="noticeMetadata.publicationDate" class="metadata-item">{{ noticeMetadata.publicationDate }}</span>
       <span v-if="noticeMetadata.buyerCountry" class="metadata-item">{{ noticeMetadata.buyerCountry }}</span>
       <span v-if="noticeMetadata.customizationId" class="metadata-item">{{ noticeMetadata.customizationId }}</span>

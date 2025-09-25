@@ -32,6 +32,7 @@
     "rdf-ext": "^2.5.2",
     "rdf-tree": "^0.6.0",
     "unenv": "^1.10.0",
+    "vitest": "^3.2.4",
     "zod": "^4.0.17"
   },
   "devDependencies": {

@@ -10,7 +10,7 @@ import {
   lightTheme,
   useMessage,
 } from 'naive-ui'
-import { ref, watch, computed, onMounted, nextTick } from 'vue'
+import { ref, watch, computed, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
 import { ShareSocialOutline as ShareIcon } from '@vicons/ionicons5'
 import { GridLayout } from 'grid-layout-plus'
