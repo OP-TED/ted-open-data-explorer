@@ -129,6 +129,7 @@
 }
 
 .vertical-value > li > div > div:not(.entity) {
+    /*Anchor links*/
     margin: 7px;
 }
 
@@ -149,3 +150,31 @@
 .rounded-value .entity {
     border-radius: 10px;
 }
+
+
+/*TODO Ask for feedback about distinct layout options: */
+
+/*Option 1 */
+
+/*.row > .property {*/
+/*    flex: 0 0 180px; !* fixed width, adjust as needed *!*/
+/*    word-wrap: break-word;*/
+/*}*/
+
+
+/*Option 2 */
+
+/*.row {*/
+/*    display: flex;*/
+/*}*/
+
+/*.row > .property {*/
+/*    flex: 1;  !* same share for all property columns *!*/
+/*    max-width: 200px; !* optional cap *!*/
+/*    margin: .5rem .5rem .5rem 1%;*/
+/*}*/
+
+/*.row > .value {*/
+/*    flex: 3;  !* takes more space *!*/
+/*    margin: .5rem;*/
+/*}*/
