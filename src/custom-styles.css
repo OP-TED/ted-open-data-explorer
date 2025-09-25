@@ -128,19 +128,16 @@
     border-radius: 10px;
 }
 
-.vertical-value > li > div {
-    margin: 10px;
+.vertical-value > li > div > div:not(.entity) {
+    margin: 7px;
 }
 
 .vertical-value .entity {
     border: none;
 }
 
-
 .vertical-value .entity-header {
     max-height: 50px;
-    color: #999;
-
 }
 
 .vertical-value .entity-header a {
