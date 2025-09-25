@@ -122,22 +122,32 @@
     gap: 10px;
 }
 
-.vertical-value .entity {
-    border-right: 1px solid rgb(147, 51, 234);
+.vertical-value > li {
+    border: 1px solid rgb(147, 51, 234);
     width: 330px;
     border-radius: 10px;
 }
 
-.vertical-value .entity-header > div {
-    margin: 0px;
+.vertical-value > li > div {
+    margin: 10px;
 }
+
+.vertical-value .entity {
+    border: none;
+}
+
 
 .vertical-value .entity-header {
     max-height: 50px;
+    color: #999;
+
 }
+
 .vertical-value .entity-header a {
-    max-width: 50px;
+    max-width: 100px;
 }
+
+/*Rounded*/
 
 .rounded-value .entity {
     border-radius: 10px;

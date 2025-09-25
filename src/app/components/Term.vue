@@ -67,20 +67,20 @@ function selectNamedNode (term) {
           class="inline-flex items-center"
       >
         <!-- Show resolved label if available, otherwise fallback to prefix/display -->
-        <span v-if="resolvedLabel" class="label" :title="namedNodeDisplay.href">
+        <template v-if="resolvedLabel" class="label" :title="namedNodeDisplay.href">
           {{ resolvedLabel }}
-        </span>
-        <span v-else-if="namedNodeDisplay.prefix" class="vocab">
+        </template>
+        <template v-else-if="namedNodeDisplay.prefix" class="vocab">
           {{ namedNodeDisplay.prefix }}:{{ namedNodeDisplay.display }}
-        </span>
-        <span v-else>
+        </template>
+        <template v-else>
           {{ namedNodeDisplay.display }}
-        </span>
+        </template>
 
         <!-- Optional loading indicator for labels -->
-        <span v-if="labelLoading && !resolvedLabel" class="loading-indicator" title="Loading label...">
+        <template v-if="labelLoading && !resolvedLabel" class="loading-indicator" title="Loading label...">
           ⏳
-        </span>
+        </template>
       </a>
     </template>
 
