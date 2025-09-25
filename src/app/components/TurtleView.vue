@@ -11,7 +11,7 @@ const props = defineProps({
 const turtleContent = ref('')
 const isSerializing = ref(false)
 
-async function serializeToTurtle() {
+async function serializeToTurtle () {
   if (!props.dataset) return
   isSerializing.value = true
   try {

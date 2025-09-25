@@ -60,7 +60,7 @@ function selectNamedNode (term) {
           <span v-if="namedNodeDisplay.prefix" class="vocab">
             {{ namedNodeDisplay.prefix }}:{{ namedNodeDisplay.display }}
           </span>
-          <span v-else>
+        <span v-else>
             {{ namedNodeDisplay.display }}
           </span>
       </a>

@@ -4,7 +4,6 @@ import { NRadioGroup, NRadioButton, NButton, NIcon } from 'naive-ui'
 import { ChevronBackOutline, ChevronForwardOutline } from '@vicons/ionicons5'
 import TreeView from './TreeView.vue'
 import TurtleView from './TurtleView.vue'
-import SimpleView from './SimpleView.vue'
 import { useSelectionController } from '../controllers/selectionController.js'
 
 const props = defineProps({
@@ -26,7 +25,6 @@ const tooManyTriples = computed(() => tripleCount.value > 7000)
 const viewComponents = {
   tree: TreeView,
   turtle: TurtleView,
-  simple: SimpleView
 }
 
 // Force Turtle view if too many triples
@@ -84,9 +82,6 @@ function goToNext () {
               </n-radio-button>
               <n-radio-button value="turtle">
                 Turtle
-              </n-radio-button>
-              <n-radio-button value="simple">
-                Simple
               </n-radio-button>
             </n-radio-group>
           </div>
