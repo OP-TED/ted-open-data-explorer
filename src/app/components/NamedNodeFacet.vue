@@ -8,16 +8,11 @@ import Term from './Term.vue'
 const props = defineProps({
   facet: {
     type: Object,
-    required: true
-  }
+    required: true,
+  },
 })
 
 const nodeUrl = computed(() => props.facet?.term?.value || '')
-
-const displayName = computed(() => {
-  const url = nodeUrl.value
-  return url.split('/').pop() || url.split('#').pop() || url
-})
 
 // Use the facet query composable for backlink data
 const { isLoading, error, results, executeQuery } = useFacetQuery()
@@ -52,7 +47,7 @@ const paginationInfo = computed(() => {
 })
 
 // Backlink query template with pagination
-function createBacklinkQuery(offset = 0) {
+function createBacklinkQuery (offset = 0) {
   if (!nodeUrl.value) return null
 
   return `PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
@@ -93,7 +88,7 @@ const groupedBacklinks = computed(() => {
         groups[propertyUrl] = {
           property: propertyUrl,
           propertyTerm: createTermFromUrl(propertyUrl),
-          subjects: new Set()
+          subjects: new Set(),
         }
       }
 
@@ -110,7 +105,7 @@ const groupedBacklinks = computed(() => {
 })
 
 // Load backlinks for current page
-async function loadBacklinks() {
+async function loadBacklinks () {
   if (!nodeUrl.value) return
 
   const query = createBacklinkQuery(currentOffset.value)
@@ -131,22 +126,22 @@ async function loadBacklinks() {
 }
 
 // Navigate to next page
-async function nextPage() {
+async function nextPage () {
   currentOffset.value += pageSize
   await loadBacklinks()
 }
 
 // Navigate to previous page
-async function prevPage() {
+async function prevPage () {
   currentOffset.value = Math.max(0, currentOffset.value - pageSize)
   await loadBacklinks()
 }
 
 // Helper function to create a term object from a URL
-function createTermFromUrl(url) {
+function createTermFromUrl (url) {
   return {
     termType: 'NamedNode',
-    value: url
+    value: url,
   }
 }
 
@@ -171,20 +166,21 @@ watch(nodeUrl, async (newUrl) => {
       </div>
       <div v-else class="property-sections">
         <div
-          v-for="(group, propertyUrl) in groupedBacklinks"
-          :key="propertyUrl"
-          class="property-section"
+            v-for="(group, propertyUrl) in groupedBacklinks"
+            :key="propertyUrl"
+            class="property-section"
         >
           <h4 class="property-label">
-            Incoming <Term :term="group.propertyTerm" /> links
+            <Term :term="group.propertyTerm"/>
+            back-links
           </h4>
           <div class="subjects-container">
             <div
-              v-for="subjectUrl in group.subjects"
-              :key="subjectUrl"
-              class="subject-card"
+                v-for="subjectUrl in group.subjects"
+                :key="subjectUrl"
+                class="subject-card"
             >
-              <Term :term="createTermFromUrl(subjectUrl)" />
+              <Term :term="createTermFromUrl(subjectUrl)"/>
             </div>
           </div>
         </div>
@@ -199,20 +195,20 @@ watch(nodeUrl, async (newUrl) => {
           </span>
           <div class="pagination-buttons">
             <n-button
-              size="small"
-              :disabled="!hasPrevPage || isLoading"
-              @click="prevPage"
-              secondary
+                size="small"
+                :disabled="!hasPrevPage || isLoading"
+                @click="prevPage"
+                secondary
             >
               <n-icon>
                 <ChevronBackOutline/>
               </n-icon>
             </n-button>
             <n-button
-              size="small"
-              :disabled="!hasNextPage || isLoading"
-              @click="nextPage"
-              secondary
+                size="small"
+                :disabled="!hasNextPage || isLoading"
+                @click="nextPage"
+                secondary
             >
               <n-icon>
                 <ChevronForwardOutline/>
@@ -252,23 +248,19 @@ watch(nodeUrl, async (newUrl) => {
 .property-sections {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px;
 }
 
 .property-section {
   border: 1px solid #e0e0e0;
   border-radius: 6px;
-  padding: 12px;
+  padding: 6px;
   background: #fafafa;
 }
 
 .property-label {
   margin: 0 0 8px 0;
-  font-size: 14px;
-  font-weight: 600;
-  color: #333;
   border-bottom: 1px solid #ddd;
-  padding-bottom: 4px;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -284,15 +276,9 @@ watch(nodeUrl, async (newUrl) => {
 .subject-card {
   border: 1px solid #d0d0d0;
   border-radius: 4px;
-  padding: 6px 10px;
+  padding: 6px 6px;
   font-size: .8rem;
   cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.2s ease;
-  text-overflow: ellipsis;
-  overflow: hidden;
-  direction: rtl; /* reverse text flow */
-  text-align: left; /* fix alignment so the end stays visible */
   max-width: 300px;
 }
 

@@ -8,7 +8,24 @@ const props = defineProps({
   facet: {
     type: Object,
     required: true,
-    validator: (value) => safeParseFacet(value).success,
+    validator: (value) => {
+      // More lenient validation for existing facets
+      if (!value || typeof value !== 'object') return false
+      if (!value.type) return false
+      
+      // Basic type-specific validation
+      if (value.type === 'named-node') {
+        return value.term && value.term.value && typeof value.term.value === 'string'
+      }
+      if (value.type === 'notice-number') {
+        return typeof value.value === 'string'
+      }
+      if (value.type === 'query') {
+        return typeof value.query === 'string'
+      }
+      
+      return false
+    },
   },
   index: Number,
   isSelected: Boolean,

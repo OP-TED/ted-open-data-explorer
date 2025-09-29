@@ -7,8 +7,8 @@ import { getRequest, mapResponse, getNoticeByPublicationNumber, extractProcedure
 const props = defineProps({
   facet: {
     type: Object,
-    required: true
-  }
+    required: true,
+  },
 })
 
 // Check if this facet is a notice-number type
