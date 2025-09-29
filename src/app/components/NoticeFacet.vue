@@ -1,11 +1,24 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
-import { NCard, NCollapse, NCollapseItem } from 'naive-ui'
+import { NCard } from 'naive-ui'
 import Procedure from './Procedure.vue'
 import { getRequest, mapResponse, getNoticeByPublicationNumber, extractProcedureIds } from '../../services/tedAPI.js'
 
 const props = defineProps({
-  publicationNumber: String,
+  facet: {
+    type: Object,
+    required: true
+  }
+})
+
+// Check if this facet is a notice-number type
+const isNoticeFacet = computed(() => {
+  return props.facet?.type === 'notice-number' && props.facet?.value
+})
+
+// Get the publication number from the facet
+const publicationNumber = computed(() => {
+  return props.facet?.value || ''
 })
 
 // State for managing procedure data for this notice
@@ -22,7 +35,7 @@ const noticeMetadata = ref({
 
 // Fetch procedure data for all procedures associated with this notice
 async function fetchProceduresData () {
-  if (!props.publicationNumber) {
+  if (!publicationNumber.value) {
     proceduresData.value = []
     return
   }
@@ -32,7 +45,7 @@ async function fetchProceduresData () {
 
   try {
     // Step 1: Get the notice to extract procedure identifiers and metadata
-    const { url: noticeUrl, options: noticeOptions } = await getNoticeByPublicationNumber(props.publicationNumber)
+    const { url: noticeUrl, options: noticeOptions } = await getNoticeByPublicationNumber(publicationNumber.value)
     const noticeResponse = await fetch(noticeUrl, noticeOptions)
     const noticeData = await noticeResponse.json()
 
@@ -87,40 +100,56 @@ async function fetchProceduresData () {
 }
 
 // Watch for changes in publicationNumber to fetch data
-watch(() => props.publicationNumber, () => {
+watch(publicationNumber, () => {
   fetchProceduresData()
 }, { immediate: true })
-
 </script>
 
 <template>
-  <n-card size="small" class="notice-card">
-    <div v-if="noticeMetadata.publicationDate || noticeMetadata.buyerCountry || noticeMetadata.customizationId"
-         class="notice-metadata">
-      <span v-if="noticeMetadata.publicationDate" class="metadata-item">{{ noticeMetadata.publicationDate }}</span>
-      <span v-if="noticeMetadata.buyerCountry" class="metadata-item">{{ noticeMetadata.buyerCountry }}</span>
-      <span v-if="noticeMetadata.customizationId" class="metadata-item">{{ noticeMetadata.customizationId }}</span>
-    </div>
-    <div v-if="error" class="error-message">{{ error }}</div>
-    <div v-else-if="loading" class="loading-message">Loading procedures...</div>
-    <div v-else-if="proceduresData.length > 0" class="procedures-container">
-      <template v-for="procedureData in proceduresData" :key="procedureData.procedureId">
-        <Procedure
-            :procedureId="procedureData.procedureId"
-            :notices="procedureData.notices"
-            :publicationNumbers="[props.publicationNumber]"
-            :error="procedureData.error"
-        />
-      </template>
-    </div>
-    <div v-else>
-      No procedures found for this notice
-    </div>
-  </n-card>
+  <div v-if="isNoticeFacet" class="notice-facet">
+    <n-card size="small" class="notice-card">
+      <div v-if="noticeMetadata.publicationDate || noticeMetadata.buyerCountry || noticeMetadata.customizationId"
+           class="notice-metadata">
+        <span v-if="noticeMetadata.publicationDate" class="metadata-item">{{ noticeMetadata.publicationDate }}</span>
+        <span v-if="noticeMetadata.buyerCountry" class="metadata-item">{{ noticeMetadata.buyerCountry }}</span>
+        <span v-if="noticeMetadata.customizationId" class="metadata-item">{{ noticeMetadata.customizationId }}</span>
+      </div>
+      <div v-if="error" class="error-message">{{ error }}</div>
+      <div v-else-if="loading" class="loading-message">Loading procedures...</div>
+      <div v-else-if="proceduresData.length > 0" class="procedures-container">
+        <template v-for="procedureData in proceduresData" :key="procedureData.procedureId">
+          <Procedure
+              :procedureId="procedureData.procedureId"
+              :notices="procedureData.notices"
+              :publicationNumbers="[publicationNumber]"
+              :error="procedureData.error"
+          />
+        </template>
+      </div>
+      <div v-else>
+        No procedures found for this notice
+      </div>
+    </n-card>
+  </div>
+  <div v-else class="placeholder">
+    <!-- Placeholder for non-notice facets -->
+  </div>
 </template>
 
 <style scoped>
+.notice-facet {
+  height: 100%;
+  overflow-y: auto;
+}
 
+.placeholder {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  font-style: italic;
+}
 
 .notice-card {
   border: 1px solid #e0e0e0;
@@ -139,7 +168,6 @@ watch(() => props.publicationNumber, () => {
   white-space: nowrap;
 }
 
-
 .error-message {
   color: #d32f2f;
   background: #ffebee;
@@ -153,6 +181,4 @@ watch(() => props.publicationNumber, () => {
   color: #666;
   padding: 20px;
 }
-
-
 </style>

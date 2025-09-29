@@ -16,7 +16,8 @@ import { ShareSocialOutline as ShareIcon } from '@vicons/ionicons5'
 import { GridLayout } from 'grid-layout-plus'
 import AutoHeightItem from './AutoHeightItem.vue'
 import { getQuery } from '../facets/facets.js'
-import Notice from './components/Notice.vue'
+import NoticeFacet from './components/NoticeFacet.vue'
+import NamedNodeFacet from './components/NamedNodeFacet.vue'
 import Data from './components/Data.vue'
 import SparqlEditor from './components/SparqlEditor.vue'
 import FacetsList from './FacetsList.vue'
@@ -244,11 +245,8 @@ const nextFacet = computed(() => {
                 </div>
                 <!-- Context Panel (Procedures/Entities) -->
                 <div v-else-if="item.component === 'context'" class="context-content">
-                  <div v-if="currentFacet?.type === 'notice-number' && currentFacet?.value">
-                    <Notice :publicationNumber="currentFacet.value"/>
-                  </div>
-                  <div v-else class="placeholder">
-                  </div>
+                  <NoticeFacet v-if="currentFacet?.type === 'notice-number'" :facet="currentFacet"/>
+                  <NamedNodeFacet v-else-if="currentFacet?.type === 'named-node'" :facet="currentFacet"/>
                 </div>
                 <!-- Data Panel (RDF Tree) -->
                 <Data v-else-if="item.component === 'data'"
