@@ -16,7 +16,9 @@ import { ShareSocialOutline as ShareIcon } from '@vicons/ionicons5'
 import { GridLayout } from 'grid-layout-plus'
 import AutoHeightItem from './AutoHeightItem.vue'
 import { getQuery } from '../facets/facets.js'
-import Notice from './components/Notice.vue'
+import NoticeFacet from './components/NoticeFacet.vue'
+import NamedNodeFacet from './components/NamedNodeFacet.vue'
+import Term from './components/Term.vue'
 import Data from './components/Data.vue'
 import SparqlEditor from './components/SparqlEditor.vue'
 import FacetsList from './FacetsList.vue'
@@ -124,14 +126,26 @@ async function updateItemHeight (id, newHeight) {
   }
 }
 
-const getContextTitle = computed(() => {
-  const item = gridLayout.value.find(i => i.i === 'context')
-  if (!item) return 'Facet'
-  const hasNotice = currentFacet.value?.type === 'notice-number' && currentFacet.value?.value
-  if (hasNotice) {
-    return `Notice - ${currentFacet.value.value}`
+// Helper function to create term objects for title display
+function createTermForTitle(facet) {
+  if (facet?.type === 'notice-number' && facet?.value) {
+    // Create a term object for notice URLs
+    return {
+      termType: 'NamedNode',
+      value: facet.value
+    }
   }
-  return 'Facet'
+  if (facet?.type === 'named-node' && facet?.term?.value) {
+    return facet.term
+  }
+  return null
+}
+
+const getContextTitle = computed(() => {
+  return {
+    term: createTermForTitle(currentFacet.value),
+    prefix: currentFacet.value?.type === 'notice-number' ? 'Notice:' : 'URI:'
+  }
 })
 
 const getDataTitle = computed(() => {
@@ -199,9 +213,15 @@ const nextFacet = computed(() => {
                     <button @click="toggleCollapse(item.i)" class="collapse-btn">
                       {{ item.collapsed ? '▶' : '▼' }}
                     </button>
-                    <span>{{
-                        item.i === 'context' ? getContextTitle : (item.i === 'data' ? getDataTitle : item.title)
-                      }}</span>
+                    <span v-if="item.i === 'context' && getContextTitle.term" class="context-title">
+                      {{ getContextTitle.prefix }} <Term :term="getContextTitle.term" />
+                    </span>
+                    <span v-else-if="item.i === 'data'">
+                      {{ getDataTitle }}
+                    </span>
+                    <span v-else>
+                      {{ item.title }}
+                    </span>
                   </div>
                   <div class="drag-handle">⋮⋮</div>
                 </div>
@@ -244,11 +264,8 @@ const nextFacet = computed(() => {
                 </div>
                 <!-- Context Panel (Procedures/Entities) -->
                 <div v-else-if="item.component === 'context'" class="context-content">
-                  <div v-if="currentFacet?.type === 'notice-number' && currentFacet?.value">
-                    <Notice :publicationNumber="currentFacet.value"/>
-                  </div>
-                  <div v-else class="placeholder">
-                  </div>
+                  <NoticeFacet v-if="currentFacet?.type === 'notice-number'" :facet="currentFacet" :key="`notice-${currentFacet?.value}`"/>
+                  <NamedNodeFacet v-else-if="currentFacet?.type === 'named-node'" :facet="currentFacet" :key="`named-node-${currentFacet?.term?.value}`"/>
                 </div>
                 <!-- Data Panel (RDF Tree) -->
                 <Data v-else-if="item.component === 'data'"
@@ -375,5 +392,12 @@ const nextFacet = computed(() => {
   .search-inputs {
     flex-direction: column;
   }
+}
+
+.context-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
 }
 </style>
