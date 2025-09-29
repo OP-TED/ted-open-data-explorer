@@ -259,7 +259,7 @@ watch(nodeUrl, async (newUrl) => {
 }
 
 .property-with-arrow .arrow {
-  width: 40px;
+  width: 100px;
   height: 2px;
   background-color: #666;
   position: relative;
