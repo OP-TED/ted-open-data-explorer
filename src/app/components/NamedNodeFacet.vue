@@ -214,6 +214,7 @@ watch(nodeUrl, async (newUrl) => {
   display: flex;
   flex-wrap: wrap;
   gap: 0.25rem;
+  justify-content: flex-end;
 
 }
 
@@ -244,7 +245,7 @@ watch(nodeUrl, async (newUrl) => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: start;
+  align-items: center;
   gap: 0.25rem;
 }
 
