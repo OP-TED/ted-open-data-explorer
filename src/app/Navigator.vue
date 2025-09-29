@@ -245,8 +245,8 @@ const nextFacet = computed(() => {
                 </div>
                 <!-- Context Panel (Procedures/Entities) -->
                 <div v-else-if="item.component === 'context'" class="context-content">
-                  <NoticeFacet v-if="currentFacet?.type === 'notice-number'" :facet="currentFacet"/>
-                  <NamedNodeFacet v-else-if="currentFacet?.type === 'named-node'" :facet="currentFacet"/>
+                  <NoticeFacet v-if="currentFacet?.type === 'notice-number'" :facet="currentFacet" :key="`notice-${currentFacet?.value}`"/>
+                  <NamedNodeFacet v-else-if="currentFacet?.type === 'named-node'" :facet="currentFacet" :key="`named-node-${currentFacet?.term?.value}`"/>
                 </div>
                 <!-- Data Panel (RDF Tree) -->
                 <Data v-else-if="item.component === 'data'"
