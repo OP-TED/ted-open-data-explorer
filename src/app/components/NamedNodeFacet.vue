@@ -14,12 +14,10 @@ const props = defineProps({
 
 const nodeUrl = computed(() => props.facet?.term?.value || '')
 
-// Use the facet query composable for backlink data
 const { isLoading, error, results, executeQuery } = useFacetQuery()
 
-// Pagination state
 const currentOffset = ref(0)
-const pageSize = 9
+const pageSize = 30
 const hasNextPage = ref(true)
 const hasPrevPage = computed(() => currentOffset.value > 0)
 
@@ -46,10 +44,8 @@ const paginationInfo = computed(() => {
   }
 })
 
-// Backlink query template with pagination
 function createBacklinkQuery (offset = 0) {
   if (!nodeUrl.value) return null
-
   return `PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 PREFIX epo: <http://data.europa.eu/a4g/ontology#>
 PREFIX cdm: <http://publications.europa.eu/ontology/cdm#>
@@ -71,19 +67,14 @@ WHERE {
 }`
 }
 
-// Process backlink data into grouped structure
 const groupedBacklinks = computed(() => {
   if (!results.value?.dataset) return {}
-
   const groups = {}
   const dataset = results.value.dataset
-
-  // Iterate through all quads where our node is the object
   for (const quad of dataset) {
     if (quad.object.value === nodeUrl.value) {
       const propertyUrl = quad.predicate.value
       const subjectUrl = quad.subject.value
-
       if (!groups[propertyUrl]) {
         groups[propertyUrl] = {
           property: propertyUrl,
@@ -91,30 +82,21 @@ const groupedBacklinks = computed(() => {
           subjects: new Set(),
         }
       }
-
       groups[propertyUrl].subjects.add(subjectUrl)
     }
   }
-
-  // Convert Sets to Arrays and sort
   Object.values(groups).forEach(group => {
     group.subjects = Array.from(group.subjects).sort()
   })
-
   return groups
 })
 
-// Load backlinks for current page
 async function loadBacklinks () {
   if (!nodeUrl.value) return
-
   const query = createBacklinkQuery(currentOffset.value)
   if (!query) return
-
   await executeQuery(query)
-
   if (results.value?.dataset) {
-    // Count distinct subject-predicate pairs to determine if there's a next page
     const relationships = new Set()
     for (const quad of results.value.dataset) {
       if (quad.object.value === nodeUrl.value) {
@@ -125,19 +107,16 @@ async function loadBacklinks () {
   }
 }
 
-// Navigate to next page
 async function nextPage () {
   currentOffset.value += pageSize
   await loadBacklinks()
 }
 
-// Navigate to previous page
 async function prevPage () {
   currentOffset.value = Math.max(0, currentOffset.value - pageSize)
   await loadBacklinks()
 }
 
-// Helper function to create a term object from a URL
 function createTermFromUrl (url) {
   return {
     termType: 'NamedNode',
@@ -145,10 +124,16 @@ function createTermFromUrl (url) {
   }
 }
 
-// Load backlinks when facet changes
+function getPropertyColor (index) {
+  const colors = [
+    '#4f46e5', '#059669', '#dc2626', '#d97706',
+    '#7c3aed', '#0891b2', '#be185d', '#65a30d',
+  ]
+  return colors[index % colors.length]
+}
+
 watch(nodeUrl, async (newUrl) => {
   if (newUrl) {
-    // Reset state and load initial data
     currentOffset.value = 0
     hasNextPage.value = true
     await loadBacklinks()
@@ -159,62 +144,58 @@ watch(nodeUrl, async (newUrl) => {
 <template>
   <div class="named-node-facet">
     <div class="backlinks-content">
-      <div v-if="isLoading && Object.keys(groupedBacklinks).length === 0" class="loading">Loading backlinks...</div>
-      <div v-else-if="error" class="error">Error: {{ error.message }}</div>
-      <div v-else-if="Object.keys(groupedBacklinks).length === 0" class="no-backlinks">
-        No backlinks found
-      </div>
-      <div v-else class="property-sections">
-        <div
-            v-for="(group, propertyUrl) in groupedBacklinks"
-            :key="propertyUrl"
-            class="property-section"
-        >
-          <h4 class="property-label">
-            <Term :term="group.propertyTerm"/>
-            back-links
-          </h4>
-          <div class="subjects-container">
-            <div
-                v-for="subjectUrl in group.subjects"
-                :key="subjectUrl"
-                class="subject-card"
-            >
-              <Term :term="createTermFromUrl(subjectUrl)"/>
-            </div>
-          </div>
+      <div
+          v-for="(group, index) in groupedBacklinks"
+          :key="group.property"
+          class="property-row"
+      >
+        <div class="subjects">
+          <span
+              v-for="subjectUrl in group.subjects"
+              :key="subjectUrl"
+              class="subject-item"
+          >
+            <Term :term="createTermFromUrl(subjectUrl)"/>
+          </span>
         </div>
 
-        <!-- Pagination Controls -->
-        <div v-if="hasPrevPage || hasNextPage" class="pagination-container">
-          <span class="pagination-info">
-            {{ paginationInfo }}
-            <span v-if="isLoading && Object.keys(groupedBacklinks).length > 0" class="loading-indicator">
-              Loading...
-            </span>
+        <div class="property-with-arrow">
+          <span class="property-term">
+            <Term :term="group.propertyTerm"/>
           </span>
-          <div class="pagination-buttons">
-            <n-button
-                size="small"
-                :disabled="!hasPrevPage || isLoading"
-                @click="prevPage"
-                secondary
-            >
-              <n-icon>
-                <ChevronBackOutline/>
-              </n-icon>
-            </n-button>
-            <n-button
-                size="small"
-                :disabled="!hasNextPage || isLoading"
-                @click="nextPage"
-                secondary
-            >
-              <n-icon>
-                <ChevronForwardOutline/>
-              </n-icon>
-            </n-button>
-          </div>
+          <div class="arrow"></div>
+        </div>
+      </div>
+
+      <!-- Pagination Controls -->
+      <div v-if="hasPrevPage || hasNextPage" class="pagination-container">
+        <span class="pagination-info">
+          {{ paginationInfo }}
+          <span v-if="isLoading && Object.keys(groupedBacklinks).length > 0" class="loading-indicator">
+            Loading...
+          </span>
+        </span>
+        <div class="pagination-buttons">
+          <n-button
+              size="small"
+              :disabled="!hasPrevPage || isLoading"
+              @click="prevPage"
+              secondary
+          >
+            <n-icon>
+              <ChevronBackOutline/>
+            </n-icon>
+          </n-button>
+          <n-button
+              size="small"
+              :disabled="!hasNextPage || isLoading"
+              @click="nextPage"
+              secondary
+          >
+            <n-icon>
+              <ChevronForwardOutline/>
+            </n-icon>
+          </n-button>
         </div>
       </div>
     </div>
@@ -222,69 +203,35 @@ watch(nodeUrl, async (newUrl) => {
 </template>
 
 <style scoped>
-.named-node-facet {
-  height: 100%;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-}
-
-.backlinks-content {
-  flex: 1;
-  min-height: 0;
-}
-
-.loading, .error, .no-backlinks {
-  text-align: center;
-  font-style: italic;
-}
-
-.error {
-  color: #d32f2f;
-  background: #ffebee;
-  border-radius: 4px;
-}
-
-.property-sections {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.property-section {
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  padding: 6px;
-  background: #fafafa;
-}
-
-.property-label {
-  margin: 0 0 8px 0;
-  border-bottom: 1px solid #ddd;
+.property-row {
   display: flex;
   align-items: center;
-  gap: 4px;
-  flex-wrap: nowrap;
+  margin: 0.5rem 0;
 }
 
-.subjects-container {
+.subjects {
+  flex: 7;
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 0.25rem;
+
 }
 
-.subject-card {
-  border: 1px solid #d0d0d0;
-  border-radius: 4px;
-  padding: 6px 6px;
-  font-size: .8rem;
-  cursor: pointer;
-  max-width: 300px;
+.subject-item {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  padding: 2px 6px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  max-width: 200px;
 }
 
-.subject-card :deep(div),
-.subject-card :deep(a),
-.subject-card :deep(span) {
+.subject-item :deep(div),
+.subject-item :deep(a),
+.subject-item :deep(span) {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -293,11 +240,49 @@ watch(nodeUrl, async (newUrl) => {
   max-width: 100%;
 }
 
+.property-with-arrow {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: 0.25rem;
+}
+
+.property-term {
+  display: inline-block;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  padding: 6px;
+  font-size: 1rem;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.property-with-arrow .arrow {
+  width: 40px;
+  height: 2px;
+  background-color: #666;
+  position: relative;
+  margin: 0;
+}
+
+.property-with-arrow .arrow::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: -4px;
+  border-left: 6px solid #666;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+}
+
 .pagination-container {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-top: 12px;
+  padding: 8px 0;
+  border-top: 1px solid #e0e0e0;
 }
 
 .pagination-info {
@@ -316,4 +301,5 @@ watch(nodeUrl, async (newUrl) => {
   display: flex;
   gap: 2px;
 }
+
 </style>

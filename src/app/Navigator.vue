@@ -144,7 +144,7 @@ function createTermForTitle(facet) {
 const getContextTitle = computed(() => {
   return {
     term: createTermForTitle(currentFacet.value),
-    prefix: currentFacet.value?.type === 'notice-number' ? 'Notice:' : 'URI:'
+    prefix: currentFacet.value?.type === 'notice-number' ? 'Notice:' : 'backlinks of'
   }
 })
 
