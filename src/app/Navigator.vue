@@ -152,12 +152,15 @@ const getContextTitle = computed(() => {
 })
 
 const getDataTitle = computed(() => {
-  const hasData = results.value?.dataset
-  if (hasData) {
-    const tripleCount = results.value.dataset.size
-    return `Data (${tripleCount.toLocaleString()} triples)`
+  if (!backlinksTerm.value) return 'Data'
+
+  const tripleCount = results.value?.dataset?.size
+  const uri = backlinksTerm.value.value
+
+  if (tripleCount) {
+    return { uri, count: `(${tripleCount.toLocaleString()} triples)` }
   }
-  return 'Data'
+  return { uri, count: '' }
 })
 
 // Navigation facets for Data component - navigate through ALL facets in order
@@ -239,6 +242,9 @@ const backlinksTerm = computed(() => {
                     </button>
                     <span v-if="item.i === 'context' && getContextTitle?.term" class="context-title">
                       {{ getContextTitle.prefix }} <Term :term="getContextTitle.term" />
+                    </span>
+                    <span v-else-if="item.i === 'data' && typeof getDataTitle === 'object'" class="context-title">
+                      <Term :term="{ termType: 'NamedNode', value: getDataTitle.uri }" /> {{ getDataTitle.count }}
                     </span>
                     <span v-else-if="item.i === 'data'">
                       {{ getDataTitle }}
