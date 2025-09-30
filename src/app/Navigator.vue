@@ -16,10 +16,10 @@ import { ShareSocialOutline as ShareIcon } from '@vicons/ionicons5'
 import { GridLayout } from 'grid-layout-plus'
 import AutoHeightItem from './AutoHeightItem.vue'
 import { getQuery } from '../facets/facets.js'
-import NoticeFacet from './components/NoticeFacet.vue'
-import NamedNodeFacet from './components/NamedNodeFacet.vue'
+import NoticeView from './components/NoticeView.vue'
+import NamedNodeFacet from './components/BacklinksView.vue'
 import Term from './components/Term.vue'
-import Data from './components/Data.vue'
+import DataView from './components/DataView.vue'
 import SparqlEditor from './components/SparqlEditor.vue'
 import FacetsList from './FacetsList.vue'
 import { useSelectionController, defaultOptions } from './controllers/selectionController.js'
@@ -264,11 +264,11 @@ const nextFacet = computed(() => {
                 </div>
                 <!-- Context Panel (Procedures/Entities) -->
                 <div v-else-if="item.component === 'context'" class="context-content">
-                  <NoticeFacet v-if="currentFacet?.type === 'notice-number'" :facet="currentFacet" :key="`notice-${currentFacet?.value}`"/>
+                  <NoticeView v-if="currentFacet?.type === 'notice-number'" :facet="currentFacet" :key="`notice-${currentFacet?.value}`"/>
                   <NamedNodeFacet v-else-if="currentFacet?.type === 'named-node'" :facet="currentFacet" :key="`named-node-${currentFacet?.term?.value}`"/>
                 </div>
                 <!-- Data Panel (RDF Tree) -->
-                <Data v-else-if="item.component === 'data'"
+                <DataView v-else-if="item.component === 'data'"
                       :error="error"
                       :isLoading="isLoading"
                       :dataset="results?.dataset"
