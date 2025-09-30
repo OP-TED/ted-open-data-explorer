@@ -16,10 +16,10 @@ import { ShareSocialOutline as ShareIcon } from '@vicons/ionicons5'
 import { GridLayout } from 'grid-layout-plus'
 import AutoHeightItem from './AutoHeightItem.vue'
 import { getQuery } from '../facets/facets.js'
-import NoticeFacet from './components/NoticeFacet.vue'
-import NamedNodeFacet from './components/NamedNodeFacet.vue'
+import NoticeView from './components/NoticeView.vue'
+import NamedNodeFacet from './components/BacklinksView.vue'
 import Term from './components/Term.vue'
-import Data from './components/Data.vue'
+import DataView from './components/DataView.vue'
 import SparqlEditor from './components/SparqlEditor.vue'
 import FacetsList from './FacetsList.vue'
 import { useSelectionController, defaultOptions } from './controllers/selectionController.js'
@@ -71,12 +71,12 @@ watch(currentFacet, async (newFacet) => {
 })
 
 const gridLayout = ref([
-  { i: 'search', x: 0, y: 0, w: 6, h: 3, title: 'Search', component: 'search', collapsed: false },
-  { i: 'query', x: 6, y: 0, w: 6, h: 3, title: 'SPARQL Query', component: 'query', collapsed: true, originalHeight: 6 },
-  { i: 'facets-1', x: 0, y: 3, w: 12, h: 5, title: 'Facets-1', component: 'facets-1', collapsed: false },
-  { i: 'facets-2', x: 10, y: 15, w: 2, h: 22, title: 'History', component: 'facets-2', collapsed: false },
-  { i: 'context', x: 0, y: 8, w: 12, h: 7, title: 'Context', component: 'context', collapsed: false },
-  { i: 'data', x: 0, y: 15, w: 10, h: 25, title: 'Data', component: 'data', collapsed: false },
+  { i: 'search', x: 0, y: 0, w: 3, h: 3, title: 'Search', component: 'search', collapsed: false },
+  { i: 'notices', x: 3, y: 3, w: 9, h: 4, title: 'Notices', component: 'facets-1', collapsed: false },
+  { i: 'facets-2', x: 10, y: 13, w: 2, h: 52, title: 'History', component: 'facets-2', collapsed: false },
+  { i: 'context', x: 0, y: 6, w: 12, h: 7, title: 'Notice', component: 'context', collapsed: false },
+  { i: 'data', x: 0, y: 13, w: 10, h: 33, title: 'Data', component: 'data', collapsed: false },
+  { i: 'backlinks', x: 0, y: 46, w: 10, h: 10, title: 'Backlinks', component: 'backlinks', collapsed: false },
 ])
 
 const gridRef = ref(null)
@@ -142,19 +142,25 @@ function createTermForTitle(facet) {
 }
 
 const getContextTitle = computed(() => {
-  return {
-    term: createTermForTitle(currentFacet.value),
-    prefix: currentFacet.value?.type === 'notice-number' ? 'Notice:' : 'backlinks of'
+  if (currentFacet.value?.type === 'notice-number' && currentFacet.value?.value) {
+    return {
+      term: createTermForTitle(currentFacet.value),
+      prefix: 'Notice:'
+    }
   }
+  return null
 })
 
 const getDataTitle = computed(() => {
-  const hasData = results.value?.dataset
-  if (hasData) {
-    const tripleCount = results.value.dataset.size
-    return `Data (${tripleCount.toLocaleString()} triples)`
+  if (!backlinksTerm.value) return 'Data'
+
+  const tripleCount = results.value?.dataset?.size
+  const uri = backlinksTerm.value.value
+
+  if (tripleCount) {
+    return { uri, count: `(${tripleCount.toLocaleString()} triples)` }
   }
-  return 'Data'
+  return { uri, count: '' }
 })
 
 // Navigation facets for Data component - navigate through ALL facets in order
@@ -172,6 +178,26 @@ const nextFacet = computed(() => {
   if (currentFacetIndex.value === -1 || currentFacetIndex.value >= selectionController.facetsList.length -
       1) return null
   return selectionController.facetsList[currentFacetIndex.value + 1]
+})
+
+// Extract term from current facet for backlinks
+const backlinksTerm = computed(() => {
+  if (!currentFacet.value) return null
+
+  // Named-node facets already have a term
+  if (currentFacet.value.term) {
+    return currentFacet.value.term
+  }
+
+  // Notice-number facets have the URL in value
+  if (currentFacet.value.value) {
+    return {
+      termType: 'NamedNode',
+      value: currentFacet.value.value
+    }
+  }
+
+  return null
 })
 </script>
 
@@ -196,6 +222,7 @@ const nextFacet = computed(() => {
           <AutoHeightItem
               v-for="item in gridLayout"
               :key="item.i"
+              v-show="item.i !== 'context' || currentFacet?.type === 'notice-number'"
               :x="item.x"
               :y="item.y"
               :w="item.w"
@@ -213,8 +240,11 @@ const nextFacet = computed(() => {
                     <button @click="toggleCollapse(item.i)" class="collapse-btn">
                       {{ item.collapsed ? '▶' : '▼' }}
                     </button>
-                    <span v-if="item.i === 'context' && getContextTitle.term" class="context-title">
+                    <span v-if="item.i === 'context' && getContextTitle?.term" class="context-title">
                       {{ getContextTitle.prefix }} <Term :term="getContextTitle.term" />
+                    </span>
+                    <span v-else-if="item.i === 'data' && typeof getDataTitle === 'object'" class="context-title">
+                      <Term :term="{ termType: 'NamedNode', value: getDataTitle.uri }" /> {{ getDataTitle.count }}
                     </span>
                     <span v-else-if="item.i === 'data'">
                       {{ getDataTitle }}
@@ -246,14 +276,6 @@ const nextFacet = computed(() => {
                     </n-icon>
                   </n-button>
                 </div>
-                <!-- SPARQL Query Panel -->
-                <div v-else-if="item.component === 'query'" class="query-content">
-                  <SparqlEditor v-model="editorQuery" :isLoading="isLoading" style="height: calc(100% - 50px);"/>
-                  <n-button @click="doSparql(editorQuery)" :loading="isLoading"
-                            style="margin-top: 8px; align-self: flex-end;">
-                    Execute Query
-                  </n-button>
-                </div>
                 <!-- Facets-1 Panel -->
                 <div v-else-if="item.component === 'facets-1'" class="facets-content">
                   <FacetsList :facets="horizontalFacets"/>
@@ -262,18 +284,30 @@ const nextFacet = computed(() => {
                 <div v-else-if="item.component === 'facets-2'" class="facets-content">
                   <FacetsList :facets="verticalFacets"/>
                 </div>
-                <!-- Context Panel (Procedures/Entities) -->
+                <!-- Context Panel (Notice Information) -->
                 <div v-else-if="item.component === 'context'" class="context-content">
-                  <NoticeFacet v-if="currentFacet?.type === 'notice-number'" :facet="currentFacet" :key="`notice-${currentFacet?.value}`"/>
-                  <NamedNodeFacet v-else-if="currentFacet?.type === 'named-node'" :facet="currentFacet" :key="`named-node-${currentFacet?.term?.value}`"/>
+                  <NoticeView v-if="currentFacet?.type === 'notice-number'" :facet="currentFacet" :key="`notice-${currentFacet?.value}`"/>
+                </div>
+                <!-- Backlinks Panel -->
+                <div v-else-if="item.component === 'backlinks'" class="context-content">
+                  <NamedNodeFacet v-if="backlinksTerm" :facet="{ term: backlinksTerm }" :key="`backlinks-${backlinksTerm.value}`"/>
                 </div>
                 <!-- Data Panel (RDF Tree) -->
-                <Data v-else-if="item.component === 'data'"
+                <DataView v-else-if="item.component === 'data'"
                       :error="error"
                       :isLoading="isLoading"
                       :dataset="results?.dataset"
                       :previousFacet="previousFacet"
-                      :nextFacet="nextFacet"/>
+                      :nextFacet="nextFacet">
+                  <template #query-view>
+                    <div class="query-view-content">
+                      <SparqlEditor v-model="editorQuery" :isLoading="isLoading" class="query-editor"/>
+                      <n-button @click="doSparql(editorQuery)" :loading="isLoading" class="execute-button">
+                        Execute Query
+                      </n-button>
+                    </div>
+                  </template>
+                </DataView>
               </div>
             </n-card>
           </AutoHeightItem>
@@ -365,9 +399,21 @@ const nextFacet = computed(() => {
   flex: 1;
 }
 
-.query-content {
+.query-view-content {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  gap: 8px;
+}
+
+.query-editor {
+  flex: 1;
+  min-height: 0;
+}
+
+.execute-button {
+  align-self: flex-end;
 }
 
 .facets-content {

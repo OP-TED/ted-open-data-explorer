@@ -124,14 +124,6 @@ function createTermFromUrl (url) {
   }
 }
 
-function getPropertyColor (index) {
-  const colors = [
-    '#4f46e5', '#059669', '#dc2626', '#d97706',
-    '#7c3aed', '#0891b2', '#be185d', '#65a30d',
-  ]
-  return colors[index % colors.length]
-}
-
 watch(nodeUrl, async (newUrl) => {
   if (newUrl) {
     currentOffset.value = 0

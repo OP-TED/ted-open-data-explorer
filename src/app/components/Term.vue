@@ -60,7 +60,10 @@ function selectNamedNode (term) {
 <template>
   <div>
     <span><slot/></span>
-    <template v-if="namedNodeDisplay">
+    <template v-if="term.termType === 'BlankNode'">
+      {{ term.value }}
+    </template>
+    <template v-else-if="namedNodeDisplay">
       <a
           :href="namedNodeDisplay.href"
           @click.prevent="selectNamedNode(term)"
