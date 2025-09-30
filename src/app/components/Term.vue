@@ -56,11 +56,17 @@ function selectNamedNode (term) {
   })
 }
 
+
+function displayAsText(term) {
+  return term.termType === 'BlankNode' || term.value.startsWith('b')
+}
+
+
 </script>
 <template>
   <div>
     <span><slot/></span>
-    <template v-if="term.termType === 'BlankNode'">
+    <template v-if="displayAsText(term)">
       {{ term.value }}
     </template>
     <template v-else-if="namedNodeDisplay">
