@@ -71,11 +71,11 @@ watch(currentFacet, async (newFacet) => {
 })
 
 const gridLayout = ref([
-  { i: 'search', x: 0, y: 0, w: 6, h: 3, title: 'Search', component: 'search', collapsed: false },
-  { i: 'facets-1', x: 0, y: 3, w: 12, h: 5, title: 'Facets-1', component: 'facets-1', collapsed: false },
-  { i: 'facets-2', x: 10, y: 15, w: 2, h: 22, title: 'History', component: 'facets-2', collapsed: false },
-  { i: 'context', x: 0, y: 8, w: 12, h: 7, title: 'Context', component: 'context', collapsed: false },
-  { i: 'data', x: 0, y: 15, w: 10, h: 25, title: 'Data', component: 'data', collapsed: false },
+  { i: 'search', x: 0, y: 0, w: 3, h: 3, title: 'Search', component: 'search', collapsed: false },
+  { i: 'notices', x: 3, y: 3, w: 9, h: 4, title: 'Notices', component: 'facets-1', collapsed: false },
+  { i: 'facets-2', x: 10, y: 13, w: 2, h: 52, title: 'History', component: 'facets-2', collapsed: false },
+  { i: 'context', x: 0, y: 6, w: 12, h: 7, title: 'Context', component: 'context', collapsed: false },
+  { i: 'data', x: 0, y: 13, w: 10, h: 33, title: 'Data', component: 'data', collapsed: false },
 ])
 
 const gridRef = ref(null)
