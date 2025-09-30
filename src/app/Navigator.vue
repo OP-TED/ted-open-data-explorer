@@ -72,7 +72,6 @@ watch(currentFacet, async (newFacet) => {
 
 const gridLayout = ref([
   { i: 'search', x: 0, y: 0, w: 6, h: 3, title: 'Search', component: 'search', collapsed: false },
-  { i: 'query', x: 6, y: 0, w: 6, h: 3, title: 'SPARQL Query', component: 'query', collapsed: true, originalHeight: 6 },
   { i: 'facets-1', x: 0, y: 3, w: 12, h: 5, title: 'Facets-1', component: 'facets-1', collapsed: false },
   { i: 'facets-2', x: 10, y: 15, w: 2, h: 22, title: 'History', component: 'facets-2', collapsed: false },
   { i: 'context', x: 0, y: 8, w: 12, h: 7, title: 'Context', component: 'context', collapsed: false },
@@ -246,14 +245,6 @@ const nextFacet = computed(() => {
                     </n-icon>
                   </n-button>
                 </div>
-                <!-- SPARQL Query Panel -->
-                <div v-else-if="item.component === 'query'" class="query-content">
-                  <SparqlEditor v-model="editorQuery" :isLoading="isLoading" style="height: calc(100% - 50px);"/>
-                  <n-button @click="doSparql(editorQuery)" :loading="isLoading"
-                            style="margin-top: 8px; align-self: flex-end;">
-                    Execute Query
-                  </n-button>
-                </div>
                 <!-- Facets-1 Panel -->
                 <div v-else-if="item.component === 'facets-1'" class="facets-content">
                   <FacetsList :facets="horizontalFacets"/>
@@ -273,7 +264,16 @@ const nextFacet = computed(() => {
                       :isLoading="isLoading"
                       :dataset="results?.dataset"
                       :previousFacet="previousFacet"
-                      :nextFacet="nextFacet"/>
+                      :nextFacet="nextFacet">
+                  <template #query-view>
+                    <div class="query-view-content">
+                      <SparqlEditor v-model="editorQuery" :isLoading="isLoading" class="query-editor"/>
+                      <n-button @click="doSparql(editorQuery)" :loading="isLoading" class="execute-button">
+                        Execute Query
+                      </n-button>
+                    </div>
+                  </template>
+                </DataView>
               </div>
             </n-card>
           </AutoHeightItem>
@@ -365,9 +365,21 @@ const nextFacet = computed(() => {
   flex: 1;
 }
 
-.query-content {
+.query-view-content {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  gap: 8px;
+}
+
+.query-editor {
+  flex: 1;
+  min-height: 0;
+}
+
+.execute-button {
+  align-self: flex-end;
 }
 
 .facets-content {

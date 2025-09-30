@@ -85,6 +85,11 @@ function goToNext () {
               </n-radio-button>
             </n-radio-group>
           </div>
+          <n-radio-group v-model:value="viewMode" size="small">
+            <n-radio-button value="query">
+              SPARQL Query
+            </n-radio-button>
+          </n-radio-group>
         </div>
         <div v-if="tooManyTriples" class="too-many-triples-warning">
           Tree view disabled ({{ tripleCount.toLocaleString() }} triples > 7,000 limit)
@@ -92,11 +97,15 @@ function goToNext () {
       </div>
 
       <component
+          v-if="viewMode !== 'query'"
           :is="viewComponents[viewMode]"
           :dataset="dataset"
           :tooManyTriples="tooManyTriples"
           class="view-container"
       />
+      <div v-else class="query-container">
+        <slot name="query-view"></slot>
+      </div>
     </template>
     <div v-else class="placeholder">
       Execute a query to see RDF data
@@ -139,6 +148,14 @@ function goToNext () {
   flex: 1;
   overflow-y: auto;
   min-height: 0;
+}
+
+.query-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .too-many-triples-warning {
