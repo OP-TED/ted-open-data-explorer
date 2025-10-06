@@ -25,25 +25,32 @@ The application can be seen [here](https://docs.ted.europa.eu/ted-open-data-expl
 
 ### Prerequisites
 
-- Node.js (recent version)
-- npm
+- Node.js (latest LTS or newer)
+- npm (comes with Node.js)
 
-### Development
+### Set up SPARQL endpoint
+
+- Development environment
+  - Update the SPARQL endpoint in [vite.config.js](vite.config.js) file
+- Production environment
+  - Update the SPARQL endpoint in [.env.production](.env.production) file
+
+### Run in Development Mode
 
 ```bash
 npm install
 npm run dev
 ```
 
-Opens at http://localhost:5173 with hot reload and SPARQL proxy enabled.
+The app will start at http://localhost:5173 with hot reload and SPARQL proxy enabled.
 
-### Production Build
+### Build for Production
 
 ```bash
 npm run build
 ```
 
-Outputs to `dist/` directory.
+Generates a production-ready build in the `dist/` directory.
 
 ## Technology Stack
 
