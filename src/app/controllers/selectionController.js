@@ -47,6 +47,18 @@ export const useSelectionController = defineStore('notice', () => {
   const facetsList = useStorage('facets-v3', [])
   const currentFacetIndex = ref(null)
 
+  // Trim named-node facets on initialization if exceeding limit
+  const namedNodeFacets = facetsList.value.filter(f => f.type === 'named-node')
+  if (namedNodeFacets.length > 10) {
+    const excessCount = namedNodeFacets.length - 10
+    for (let i = 0; i < excessCount; i++) {
+      const oldestIndex = facetsList.value.findIndex(f => f.type === 'named-node')
+      if (oldestIndex !== -1) {
+        facetsList.value.splice(oldestIndex, 1)
+      }
+    }
+  }
+
   const currentFacet = computed(
     () => facetsList.value[currentFacetIndex.value] || null,
   )
@@ -70,7 +82,19 @@ export const useSelectionController = defineStore('notice', () => {
   }
 
   function addFacet (facet) {
-    const { facets, index } = addUnique(facetsList.value, facet,
+    let updatedList = facetsList.value
+
+    // If adding a named-node facet, ensure we don't exceed 10
+    if (facet.type === 'named-node') {
+      const namedNodeFacets = updatedList.filter(f => f.type === 'named-node')
+      if (namedNodeFacets.length >= 10) {
+        // Remove the oldest named-node facet
+        const oldestIndex = updatedList.findIndex(f => f.type === 'named-node')
+        updatedList = removeAt(updatedList, oldestIndex)
+      }
+    }
+
+    const { facets, index } = addUnique(updatedList, facet,
       facetEquals(getQuery))
     facetsList.value = facets
     return index
