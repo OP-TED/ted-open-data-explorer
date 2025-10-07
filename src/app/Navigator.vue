@@ -71,12 +71,12 @@ watch(currentFacet, async (newFacet) => {
 })
 
 const gridLayout = ref([
-  { i: 'search', x: 0, y: 0, w: 3, h: 3, title: 'Search', component: 'search', collapsed: false },
-  { i: 'notices', x: 3, y: 3, w: 9, h: 4, title: 'Notices', component: 'facets-1', collapsed: false },
+  { i: 'search', x: 0, y: 0, w: 4, h: 3, title: 'Search notices', component: 'search', collapsed: false },
+  { i: 'notices', x: 4, y: 3, w: 8, h: 4, title: 'Notices', component: 'facets-1', collapsed: false },
   { i: 'facets-2', x: 10, y: 13, w: 2, h: 52, title: 'History', component: 'facets-2', collapsed: false },
   { i: 'context', x: 0, y: 6, w: 12, h: 7, title: 'Notice', component: 'context', collapsed: false },
   { i: 'data', x: 0, y: 13, w: 10, h: 33, title: 'Data', component: 'data', collapsed: false },
-  { i: 'backlinks', x: 0, y: 46, w: 10, h: 10, title: 'Backlinks', component: 'backlinks', collapsed: false },
+  { i: 'backlinks', x: 0, y: 46, w: 10, h: 19, title: 'Backlinks', component: 'backlinks', collapsed: false },
 ])
 
 const gridRef = ref(null)
@@ -261,7 +261,7 @@ const backlinksTerm = computed(() => {
                 <!-- Search Panel -->
                 <div v-if="item.component === 'search'" class="search-content">
                   <div class="search-inputs">
-                    <n-input v-model:value="noticeNumber" placeholder="Enter notice number"
+                    <n-input v-model:value="noticeNumber" placeholder="Enter publication number"
                              @keyup.enter="searchByNoticeNumber"/>
                     <n-button secondary @click="searchByNoticeNumber" :loading="isLoading">
                       Search
@@ -276,11 +276,11 @@ const backlinksTerm = computed(() => {
                     </n-icon>
                   </n-button>
                 </div>
-                <!-- Facets-1 Panel -->
+                <!-- Notices -->
                 <div v-else-if="item.component === 'facets-1'" class="facets-content">
                   <FacetsList :facets="horizontalFacets"/>
                 </div>
-                <!-- Facets-2 Panel -->
+                <!-- History -->
                 <div v-else-if="item.component === 'facets-2'" class="facets-content">
                   <FacetsList :facets="verticalFacets"/>
                 </div>

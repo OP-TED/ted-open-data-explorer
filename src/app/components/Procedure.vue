@@ -49,7 +49,7 @@ const getType = (notice) => notice.noticeVersion ? 'warning' : 'success'
           </h3>
         </template>
         <template #footer>
-          <a v-if="notice.html" :href="notice.html" target="_blank">HTML</a>
+          <a v-if="notice.html" :href="notice.html" target="_blank">Ted link</a>
         </template>
       </n-timeline-item>
     </n-timeline>
