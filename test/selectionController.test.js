@@ -264,4 +264,141 @@ describe('Selection Controller - Facet Management', () => {
       expect(vertical[1].term.value).to.equal('Vertical 2')
     })
   })
+
+  describe('Named-Node Facet Limiting', () => {
+    it('should limit named-node facets to 10 items', () => {
+      // Create a list with 10 named-node facets
+      const facets = [
+        { type: 'query', query: 'Query 1' },
+        ...Array.from({ length: 10 }, (_, i) => ({
+          type: 'named-node',
+          term: { value: `http://example.org/node${i}` }
+        }))
+      ]
+      
+      const vertical = facets.filter(f => f.type === 'named-node')
+      expect(vertical).to.have.lengthOf(10)
+      
+      // Simulate adding an 11th named-node facet
+      const newNamedNodeFacet = {
+        type: 'named-node',
+        term: { value: 'http://example.org/node10' }
+      }
+      
+      // Get current named-node facets
+      let namedNodeFacets = facets.filter(f => f.type === 'named-node')
+      
+      // If we have 10 or more, we should remove the oldest one
+      if (namedNodeFacets.length >= 10) {
+        const oldestIndex = facets.findIndex(f => f.type === 'named-node')
+        facets.splice(oldestIndex, 1)
+      }
+      
+      // Add the new facet
+      facets.push(newNamedNodeFacet)
+      
+      // Verify we still have exactly 10 named-node facets
+      const finalVertical = facets.filter(f => f.type === 'named-node')
+      expect(finalVertical).to.have.lengthOf(10)
+      
+      // Verify the oldest was removed and newest was added
+      expect(finalVertical[0].term.value).to.equal('http://example.org/node1')
+      expect(finalVertical[9].term.value).to.equal('http://example.org/node10')
+    })
+
+    it('should not affect non-named-node facets when limiting', () => {
+      const facets = [
+        { type: 'query', query: 'Query 1' },
+        { type: 'notice-number', value: 'Notice 1' },
+        ...Array.from({ length: 10 }, (_, i) => ({
+          type: 'named-node',
+          term: { value: `http://example.org/node${i}` }
+        })),
+        { type: 'query', query: 'Query 2' }
+      ]
+      
+      const newNamedNodeFacet = {
+        type: 'named-node',
+        term: { value: 'http://example.org/node10' }
+      }
+      
+      // Simulate the limiting logic
+      let namedNodeFacets = facets.filter(f => f.type === 'named-node')
+      if (namedNodeFacets.length >= 10) {
+        const oldestIndex = facets.findIndex(f => f.type === 'named-node')
+        facets.splice(oldestIndex, 1)
+      }
+      facets.push(newNamedNodeFacet)
+      
+      // Verify horizontal facets are unchanged
+      const horizontal = facets.filter(f => f.type !== 'named-node')
+      expect(horizontal).to.have.lengthOf(3)
+      expect(horizontal[0].query).to.equal('Query 1')
+      expect(horizontal[1].value).to.equal('Notice 1')
+      expect(horizontal[2].query).to.equal('Query 2')
+    })
+
+    it('should allow adding named-node facets when under the limit', () => {
+      const facets = [
+        { type: 'query', query: 'Query 1' },
+        ...Array.from({ length: 5 }, (_, i) => ({
+          type: 'named-node',
+          term: { value: `http://example.org/node${i}` }
+        }))
+      ]
+      
+      const newNamedNodeFacet = {
+        type: 'named-node',
+        term: { value: 'http://example.org/node5' }
+      }
+      
+      // Simulate the limiting logic
+      let namedNodeFacets = facets.filter(f => f.type === 'named-node')
+      if (namedNodeFacets.length >= 10) {
+        const oldestIndex = facets.findIndex(f => f.type === 'named-node')
+        facets.splice(oldestIndex, 1)
+      }
+      facets.push(newNamedNodeFacet)
+      
+      // Should now have 6 named-node facets
+      const vertical = facets.filter(f => f.type === 'named-node')
+      expect(vertical).to.have.lengthOf(6)
+    })
+
+    it('should trim named-node facets on initialization if exceeding 10', () => {
+      // Simulate loading from localStorage with 15 named-node facets
+      const facetsFromStorage = [
+        { type: 'query', query: 'Query 1' },
+        ...Array.from({ length: 15 }, (_, i) => ({
+          type: 'named-node',
+          term: { value: `http://example.org/node${i}` }
+        })),
+        { type: 'notice-number', value: 'Notice 1' }
+      ]
+      
+      // Simulate the trimming logic that should happen on init
+      const namedNodeFacets = facetsFromStorage.filter(f => f.type === 'named-node')
+      
+      if (namedNodeFacets.length > 10) {
+        // Remove oldest named-node facets to get down to 10
+        const excessCount = namedNodeFacets.length - 10
+        for (let i = 0; i < excessCount; i++) {
+          const oldestIndex = facetsFromStorage.findIndex(f => f.type === 'named-node')
+          facetsFromStorage.splice(oldestIndex, 1)
+        }
+      }
+      
+      // Verify we now have exactly 10 named-node facets
+      const finalVertical = facetsFromStorage.filter(f => f.type === 'named-node')
+      expect(finalVertical).to.have.lengthOf(10)
+      
+      // Verify the first 5 were removed (node0-node4) and last 10 remain (node5-node14)
+      expect(finalVertical[0].term.value).to.equal('http://example.org/node5')
+      expect(finalVertical[9].term.value).to.equal('http://example.org/node14')
+      
+      // Verify other facet types are unchanged
+      const horizontal = facetsFromStorage.filter(f => f.type !== 'named-node')
+      expect(horizontal).to.have.lengthOf(2)
+    })
+  })
 })

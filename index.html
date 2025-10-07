@@ -5,12 +5,61 @@
         <title>Ted open data explorer</title>
     </head>
     <body>
+        <header class="ted-header">
+            <div class="ted-container">
+                <a class="ted-brand" href="#">
+                    <img src="./src/assets/ted-logo.png" alt="TED - Publications Office of the EU" width="60">
+                    <span>TED Open Data Explorer</span>
+                </a>
+            </div>
+        </header>
         <div id="app"></div>
         <script type="module" src="/src/app/main.js"></script>
     </body>
 </html>
 <style>
     body {
+        margin: 0;
+        padding: 0;
+    }
+
+    .ted-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+        padding: 0.5rem 0;
+    }
+
+    .ted-container {
+        max-width: 100%;
+        padding: 0 15px;
+    }
+
+    .ted-brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        text-decoration: none;
+        color: #000;
+        font-size: 1.25rem;
+    }
+
+    .ted-brand img {
+        vertical-align: middle;
+    }
+
+    .ted-header::after {
+        content: '';
+        display: block;
+        width: 100%;
+        height: 8px;
+        background-color: #28a745;
+    }
+
+    .ted-brand span {
+        font-weight: 500;
+    }
+
+    #app {
         padding: 10px;
     }
 </style>
