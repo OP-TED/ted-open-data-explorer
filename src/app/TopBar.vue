@@ -52,7 +52,7 @@ async function handleShare () {
       />
 
       <n-button secondary @click="searchByNoticeNumber">Search</n-button>
-      <n-button secondary size="tiny" @click="handleSelectRandom">Random</n-button>
+      <!-- n-button secondary size="tiny" @click="handleSelectRandom">Random</n-button -->
     </n-space>
     <n-button
         v-if="currentFacet"

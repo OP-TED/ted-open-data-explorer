@@ -71,12 +71,12 @@ watch(currentFacet, async (newFacet) => {
 })
 
 const gridLayout = ref([
-  { i: 'search', x: 0, y: 0, w: 4, h: 3, title: 'Search notices', component: 'search', collapsed: false },
-  { i: 'notices', x: 4, y: 3, w: 8, h: 4, title: 'Notices', component: 'facets-1', collapsed: false },
-  { i: 'facets-2', x: 10, y: 13, w: 2, h: 52, title: 'History', component: 'facets-2', collapsed: false },
+  { i: 'search', x: 0, y: 0, w: 4, h: 3, title: 'Search notices by publication number', component: 'search', collapsed: false },
+  { i: 'notices', x: 4, y: 3, w: 8, h: 4, title: 'Notices clipboard', component: 'facets-1', collapsed: false },
+/*  { i: 'facets-2', x: 10, y: 13, w: 2, h: 52, title: 'History', component: 'facets-2', collapsed: false }, */
   { i: 'context', x: 0, y: 6, w: 12, h: 7, title: 'Notice', component: 'context', collapsed: false },
-  { i: 'data', x: 0, y: 13, w: 10, h: 33, title: 'Data', component: 'data', collapsed: false },
-  { i: 'backlinks', x: 0, y: 46, w: 10, h: 19, title: 'Backlinks', component: 'backlinks', collapsed: false },
+  { i: 'data', x: 0, y: 13, w: 12, h: 33, title: 'Data', component: 'data', collapsed: false },
+  { i: 'backlinks', x: 0, y: 46, w: 12, h: 19, title: 'Backlinks', component: 'backlinks', collapsed: false },
 ])
 
 const gridRef = ref(null)
@@ -266,9 +266,6 @@ const backlinksTerm = computed(() => {
                     <n-button secondary @click="searchByNoticeNumber" :loading="isLoading">
                       Search
                     </n-button>
-                    <n-button secondary size="small" @click="handleSelectRandom" :loading="isLoading">
-                      Random
-                    </n-button>
                   </div>
                   <n-button v-if="currentFacet" size="small" type="primary" @click="handleShare">
                     <n-icon>
@@ -319,9 +316,8 @@ const backlinksTerm = computed(() => {
 
 <style>
 .navigator-app {
-  padding: 20px;
+  padding: 20px 20px 0;
   margin: 0 auto;
-  height: 100vh;
 }
 
 .grid-item {
