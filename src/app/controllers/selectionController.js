@@ -1,6 +1,6 @@
 import { useStorage } from '@vueuse/core'
 import { defineStore } from 'pinia'
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
 import { getQuery } from '../../facets/facets.js'
 import {
   facetEquals,
@@ -14,6 +14,7 @@ import {
 import { ns } from '../../namespaces.js'
 import { useUrlFacetParams } from '../../composables/useUrlFacetParams.js'
 import { useFacetQuery } from '../../composables/useFacetQuery.js'
+import { initializeStorage, removeExpiredFacets, addExpirationToFacet } from '../../utils/storageExpiration.js'
 
 const defaultOptions = {
   ignoreNamedGraphs: true,
@@ -30,6 +31,9 @@ const defaultOptions = {
 }
 
 export const useSelectionController = defineStore('notice', () => {
+  // Initialize storage BEFORE using it - clean up old session data
+  initializeStorage()
+
   // Composables
   const {
     getShareableUrl: generateShareableUrl,
@@ -59,6 +63,14 @@ export const useSelectionController = defineStore('notice', () => {
     }
   }
 
+  // Periodic cleanup of expired facets (every 60 seconds)
+  let cleanupInterval
+  onMounted(() => {
+    cleanupInterval = setInterval(() => {
+      facetsList.value = removeExpiredFacets(facetsList.value)
+    }, 60000)
+  })
+
   const currentFacet = computed(
     () => facetsList.value[currentFacetIndex.value] || null,
   )
@@ -82,10 +94,13 @@ export const useSelectionController = defineStore('notice', () => {
   }
 
   function addFacet (facet) {
+    // Add expiration timestamp to the facet
+    const facetWithExpiration = addExpirationToFacet(facet)
+
     let updatedList = facetsList.value
 
     // If adding a named-node facet, ensure we don't exceed 10
-    if (facet.type === 'named-node') {
+    if (facetWithExpiration.type === 'named-node') {
       const namedNodeFacets = updatedList.filter(f => f.type === 'named-node')
       if (namedNodeFacets.length >= 10) {
         // Remove the oldest named-node facet
@@ -94,7 +109,7 @@ export const useSelectionController = defineStore('notice', () => {
       }
     }
 
-    const { facets, index } = addUnique(updatedList, facet,
+    const { facets, index } = addUnique(updatedList, facetWithExpiration,
       facetEquals(getQuery))
     facetsList.value = facets
     return index

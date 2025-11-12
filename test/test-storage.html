@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Storage Test</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ccc;
+            background: #f5f5f5;
+        }
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        pre {
+            background: white;
+            padding: 10px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Storage Session Test</h1>
+
+    <div class="section">
+        <h2>Session Info</h2>
+        <div id="sessionInfo"></div>
+    </div>
+
+    <div class="section">
+        <h2>localStorage Content</h2>
+        <pre id="localStorageContent"></pre>
+    </div>
+
+    <div class="section">
+        <h2>Actions</h2>
+        <button onclick="addTestData()">Add Test Data</button>
+        <button onclick="refresh()">Refresh Display</button>
+        <button onclick="clearAll()">Clear All</button>
+    </div>
+
+    <div class="section">
+        <h2>Instructions</h2>
+        <ol>
+            <li>Click "Add Test Data" to add some data to localStorage</li>
+            <li>Note the Session ID shown above</li>
+            <li>Close this browser tab/window completely</li>
+            <li>Open this file again in a new browser tab/window</li>
+            <li>Check if the localStorage was cleared (you should see empty [] or no data from previous session)</li>
+        </ol>
+    </div>
+
+    <script type="module">
+        const SESSION_KEY = 'app-session-id'
+        const STORAGE_KEY = 'facets-v3'
+
+        function getSessionId() {
+            let sessionId = sessionStorage.getItem(SESSION_KEY)
+            if (!sessionId) {
+                sessionId = Date.now() + '-' + Math.random().toString(36).substring(2, 9)
+                sessionStorage.setItem(SESSION_KEY, sessionId)
+            }
+            return sessionId
+        }
+
+        function isExpired(facet) {
+            if (!facet.sessionId) return true
+            return facet.sessionId !== getSessionId()
+        }
+
+        function removeExpiredFacets(facets) {
+            return facets.filter(facet => !isExpired(facet))
+        }
+
+        function initializeStorage() {
+            try {
+                const storedData = localStorage.getItem(STORAGE_KEY)
+                if (storedData) {
+                    const facets = JSON.parse(storedData)
+                    if (Array.isArray(facets)) {
+                        const cleanedFacets = removeExpiredFacets(facets)
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(cleanedFacets))
+                        return cleanedFacets
+                    }
+                }
+            } catch (error) {
+                console.error('Error initializing storage:', error)
+            }
+            return []
+        }
+
+        // Initialize on page load
+        const cleaned = initializeStorage()
+        console.log('Cleaned facets on init:', cleaned)
+
+        function displayInfo() {
+            const sessionId = getSessionId()
+            const localStorage = window.localStorage.getItem(STORAGE_KEY)
+
+            document.getElementById('sessionInfo').innerHTML = `
+                <strong>Current Session ID:</strong> ${sessionId}<br>
+                <strong>Session Storage:</strong> ${sessionStorage.getItem(SESSION_KEY)}<br>
+                <strong>Data cleaned on load:</strong> ${cleaned.length > 0 ? 'Yes, kept ' + cleaned.length + ' items' : 'Yes, all old data removed'}
+            `
+
+            document.getElementById('localStorageContent').textContent =
+                localStorage || '(empty)'
+        }
+
+        window.addTestData = function() {
+            const sessionId = getSessionId()
+            const testFacets = [
+                {
+                    type: 'query',
+                    query: 'SELECT * WHERE { ?s ?p ?o }',
+                    sessionId: sessionId,
+                    timestamp: Date.now()
+                },
+                {
+                    type: 'notice-number',
+                    value: '12345-2024',
+                    sessionId: sessionId,
+                    timestamp: Date.now()
+                }
+            ]
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(testFacets))
+            displayInfo()
+            alert('Test data added! Close browser and reopen to test.')
+        }
+
+        window.refresh = function() {
+            displayInfo()
+        }
+
+        window.clearAll = function() {
+            localStorage.removeItem(STORAGE_KEY)
+            sessionStorage.removeItem(SESSION_KEY)
+            displayInfo()
+            alert('All storage cleared!')
+        }
+
+        // Initial display
+        displayInfo()
+    </script>
+</body>
+</html>
