@@ -19,7 +19,7 @@ const controller = useSelectionController()
 const viewMode = ref('tree')
 
 const tripleCount = computed(() => props.dataset?.size ?? 0)
-const tooManyTriples = computed(() => tripleCount.value > 7000)
+const tooManyTriples = computed(() => tripleCount.value > 15000)
 
 // Component mapping for dynamic component rendering
 const viewComponents = {

@@ -38,11 +38,15 @@ const getType = (notice) => notice.noticeVersion ? 'warning' : 'success'
           :key="notice.publicationNumber"
           :type="getType(notice)"
           :title="`${notice.publicationNumber}${notice.noticeVersion > 1 ? ` v${notice.noticeVersion}` : ''}`"
-          :content="`${notice.noticeType} - ${notice.formType}`"
           :time="notice.publicationDate"
           class="timeline-item"
           @click="handleClick(notice.publicationNumber)"
       >
+        <template #default>
+          <div class="notice-content">
+            {{ notice.noticeType }} - {{ notice.formType }}
+          </div>
+        </template>
         <template #header>
           <h3 v-if="isContained(notice.publicationNumber)">
             {{ notice.publicationNumber }}
@@ -58,6 +62,9 @@ const getType = (notice) => notice.noticeVersion ? 'warning' : 'success'
 </template>
 
 <style scoped>
+.notice-content {
+  white-space: nowrap;
+}
 
 
 .procedure-id {
