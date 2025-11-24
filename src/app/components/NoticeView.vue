@@ -140,6 +140,7 @@ watch(publicationNumber, () => {
 .notice-facet {
   height: 100%;
   overflow-y: auto;
+  overflow-x: auto;
 }
 
 .placeholder {
@@ -154,6 +155,7 @@ watch(publicationNumber, () => {
 .notice-card {
   border: 1px solid #e0e0e0;
   border-radius: 8px;
+  min-width: fit-content;
 }
 
 .notice-metadata {
