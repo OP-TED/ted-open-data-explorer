@@ -1,88 +1,414 @@
-<!doctype html>
+<!--
+  Copyright 2026 European Union
+
+  Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
+  Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work except in
+  compliance with the Licence. You may obtain a copy of the Licence at:
+  https://joinup.ec.europa.eu/software/page/eupl
+
+  Unless required by applicable law or agreed to in writing, software distributed under the Licence
+  is distributed on an "AS IS" basis, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+  or implied. See the Licence for the specific language governing permissions and limitations under
+  the Licence.
+-->
+<!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <title>TED Open Data Explorer</title>
-    </head>
-    <body>
-        <header class="ted-header">
-            <div class="ted-container">
-                <a class="ted-brand" href="#">
-                    <img src="./src/assets/ted-logo.png" alt="TED - Publications Office of the EU" width="60">
-                    <span>TED Open Data Explorer</span>
-                </a>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TED Open Data Explorer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="src/assets/style.css">
+    <link rel="icon" type="image/png" href="https://data.ted.europa.eu/src/assets/ted-logo.png">
+</head>
+<body>
+
+    <!-- Header -->
+    <div class="ted-header d-flex align-items-center">
+        <img src="https://data.ted.europa.eu/src/assets/ted-logo.png" alt="TED Logo" onerror="this.style.display='none'">
+        <span>TED Open Data Explorer</span>
+    </div>
+
+    <!-- Top-level navigation tabs -->
+    <nav>
+        <ul class="nav nav-tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="app-tab-search" data-bs-toggle="tab"
+                        data-bs-target="#app-search" type="button" role="tab">
+                    Search
+                </button>
+            </li>
+            <!-- Explore tab is hidden until there's a facet to explore. The
+                 DataView controller toggles this <li> inside _onFacetChanged. -->
+            <li class="nav-item" role="presentation" id="app-tab-explorer-item" style="display: none;">
+                <button class="nav-link" id="app-tab-explorer" data-bs-toggle="tab"
+                        data-bs-target="#app-explorer" type="button" role="tab">
+                    Explore
+                </button>
+            </li>
+            <li class="nav-item ms-auto" role="presentation">
+                <button class="nav-link" id="app-tab-help" data-bs-toggle="tab"
+                        data-bs-target="#app-help" type="button" role="tab">
+                    <i class="bi bi-question-circle"></i> Help
+                </button>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="tab-content">
+
+        <!-- ═══ SEARCH TAB ═══ -->
+        <div class="tab-pane fade show active pt-2 px-3 pb-3" id="app-search" role="tabpanel">
+
+            <!-- Top row: mode radios on the right -->
+            <div class="d-flex justify-content-end mb-4">
+                <div class="btn-group btn-group-sm" role="group">
+                    <input type="radio" class="btn-check" name="search-mode" id="mode-notice" value="notice" checked>
+                    <label class="btn btn-outline-secondary" for="mode-notice">
+                        <i class="bi bi-search"></i> Notice
+                    </label>
+                    <input type="radio" class="btn-check" name="search-mode" id="mode-sparql" value="sparql">
+                    <label class="btn btn-outline-secondary" for="mode-sparql">
+                        <i class="bi bi-terminal"></i> SPARQL
+                    </label>
+                </div>
             </div>
-        </header>
-        <div id="app"></div>
-        <div class="ted-footer">Developed by the Publications Office of the EU.</div>
-        <script type="module" src="/src/app/main.js"></script>
-    </body>
+
+            <!-- Notice search: vertical lanes for proportional spacing -->
+            <div id="panel-notice" class="search-hero">
+
+                <!-- Top half: search area, split into title-lane + input-lane -->
+                <div class="search-hero-top">
+                    <div class="search-hero-title-lane">
+                        <div class="search-hero-inner search-hero-prompt text-center text-muted">
+                            Look up a notice to see how the eProcurement Ontology represents it
+                        </div>
+                    </div>
+                    <div class="search-hero-input-lane">
+                        <div class="search-hero-inner d-flex align-items-center gap-2">
+                            <label for="search-input" class="visually-hidden">Publication number</label>
+                            <input type="text" id="search-input" class="form-control form-control-lg search-hero-input"
+                                   placeholder="Enter publication number" list="search-history" autocomplete="off">
+                            <datalist id="search-history"></datalist>
+                            <button id="search-btn" class="btn btn-lg search-hero-btn" title="Search">
+                                <i class="bi bi-search"></i>
+                            </button>
+                            <div class="dropdown">
+                                <button class="btn btn-lg search-hero-btn dropdown-toggle" type="button"
+                                        id="history-btn" data-bs-toggle="dropdown" aria-expanded="false"
+                                        title="Recent items">
+                                    <i class="bi bi-clock-history"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end" id="history-menu"
+                                    style="max-height: 300px; overflow-y: auto; min-width: 280px;">
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="search-hero-inner mt-2 lucky-hint">
+                            or <a href="#" id="lucky-link">click here to pick a random notice</a>
+                        </div>
+
+                        <!-- Surfaced when a shared ?facet= URL fails to parse or validate,
+                             so the recipient of a broken link actually sees the failure
+                             instead of a silently blank Search tab. -->
+                        <div id="url-load-error" class="search-hero-inner alert alert-warning alert-dismissible fade show mt-3" role="alert" style="display: none;">
+                            <span id="url-load-error-text"></span>
+                            <button type="button" class="btn-close" aria-label="Close" id="url-load-error-close"></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom half: procedure timeline (when a search has run) -->
+                <div class="search-hero-bottom">
+                    <div id="notice-results" class="card shadow-sm" style="display: none;">
+                        <div class="card-header" id="procedure-card-title"></div>
+                        <div class="card-body p-0">
+                            <div id="notice-loading" class="text-center text-muted py-2" style="display: none;">
+                                <span class="spinner-border spinner-border-sm"></span> Loading...
+                            </div>
+                            <div id="notice-error" class="alert alert-danger py-2 m-2" style="display: none;"></div>
+                            <div id="procedures-container"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SPARQL search panel -->
+            <div id="panel-sparql" style="display: none;">
+                <div id="sparql-editor"></div>
+                <div class="d-flex justify-content-end mt-2">
+                    <button id="execute-query-btn" class="btn btn-primary btn-sm">
+                        <i class="bi bi-play-fill"></i> Execute Query
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ EXPLORER TAB ═══ -->
+        <div class="tab-pane fade pt-2 px-3 pb-3 position-relative" id="app-explorer" role="tabpanel">
+
+            <div id="data-card" style="display: none;">
+                <!-- Top row: breadcrumb on the left, view mode radios on the right -->
+                <div class="d-flex align-items-center justify-content-between mb-2 data-sticky-header">
+                    <nav aria-label="breadcrumb">
+                        <ol id="data-breadcrumb" class="breadcrumb mb-0 small"></ol>
+                    </nav>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <input type="radio" class="btn-check" name="view-mode" id="view-tree" value="tree" checked>
+                        <label class="btn btn-outline-secondary" for="view-tree">
+                            <i class="bi bi-diagram-3"></i> Tree
+                        </label>
+                        <input type="radio" class="btn-check" name="view-mode" id="view-turtle" value="turtle">
+                        <label class="btn btn-outline-secondary" for="view-turtle">
+                            <i class="bi bi-code-slash"></i> Turtle
+                        </label>
+                        <input type="radio" class="btn-check" name="view-mode" id="view-backlinks" value="backlinks">
+                        <label class="btn btn-outline-secondary" for="view-backlinks">
+                            <i class="bi bi-box-arrow-in-left"></i> Backlinks
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Procedure timeline (collapsible, collapsed by default) -->
+                <div id="explorer-procedure-mini" class="card shadow-sm mb-3" style="display: none;">
+                    <div class="card-header py-1 small d-flex align-items-center" style="cursor: pointer;"
+                         data-bs-toggle="collapse" data-bs-target="#explorer-procedure-body" role="button"
+                         aria-expanded="false" aria-controls="explorer-procedure-body">
+                        <i class="bi bi-chevron-right me-2 explorer-procedure-chevron"></i>
+                        <span id="explorer-procedure-title"></span>
+                    </div>
+                    <div class="collapse" id="explorer-procedure-body">
+                        <div class="card-body p-0">
+                            <div id="explorer-procedures-container"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Page title with inline share button -->
+                <div class="d-flex align-items-center gap-2 mt-3 mb-3">
+                    <h5 id="data-card-title" class="mb-0"></h5>
+                    <button type="button" id="data-share-btn"
+                            class="btn btn-sm btn-outline-secondary border-0 rounded-circle data-share-btn"
+                            title="Copy shareable URL" style="display: none;">
+                        <i class="bi bi-share"></i>
+                    </button>
+                </div>
+
+                <div id="data-loading" class="loading-overlay" style="display: none;">
+                    <div class="spinner-border spinner-border-sm text-secondary" role="status"></div>
+                </div>
+                <div id="data-error" class="alert alert-danger py-2" style="display: none;"></div>
+
+                <div id="tree-container" class="tree-view"></div>
+                <div id="turtle-container" style="display: none;"></div>
+                <div id="backlinks-container" style="display: none;">
+                    <div id="backlinks-loading" class="text-center text-muted py-2" style="display: none;">
+                        <span class="spinner-border spinner-border-sm"></span> Loading backlinks...
+                    </div>
+                    <div id="backlinks-content"></div>
+                </div>
+
+                <!-- Shown when a notice-number search returns zero triples. Replaces
+                     the empty tree view with a clear "not found" message so the
+                     user doesn't have to interpret "0 triples" as "doesn't exist". -->
+                <div id="data-not-found" class="text-center py-5" style="display: none;">
+                    <div class="mb-3" style="font-size: 3rem; color: #adb5bd;">
+                        <i class="bi bi-search"></i>
+                    </div>
+                    <h5 class="text-muted mb-2">Notice not found</h5>
+                    <p class="text-muted mb-0">
+                        No notice with publication number
+                        <code id="data-not-found-pub"></code>
+                        was found in the dataset.
+                    </p>
+                    <p class="text-muted small mt-3 mb-0">
+                        Double-check the publication number, or
+                        <a href="#" id="data-not-found-lucky">click here to pick a random notice</a>.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Safety-net placeholder. Normally unreachable because the
+                 Explore tab itself is hidden when there's no current facet
+                 (see _onFacetChanged), but kept as a fallback in case the
+                 tab is ever shown without loaded content. -->
+            <div id="data-placeholder" class="text-center text-muted py-5 fst-italic">
+                Use the Search tab to select a notice; search results will
+                appear here.
+            </div>
+        </div>
+
+        <!-- ═══ HELP TAB ═══ -->
+        <div class="tab-pane fade pt-2 px-3 pb-3" id="app-help" role="tabpanel">
+            <div class="container-fluid mt-3">
+                <div class="row">
+                    <!-- Left Column - Help Content -->
+                    <div class="col-lg-8">
+                        <h2>Help</h2>
+                        <p>
+                            The TED Open Data Explorer lets you inspect the RDF data behind individual TED notices.
+                            Start from a publication number and navigate through the linked resources — lots, contracts, organisations, procedures —
+                            to understand how a notice is represented in the eProcurement Ontology (ePO).
+                        </p>
+                        <p>
+                            For a broader introduction to TED Open Data, the eProcurement Ontology, and SPARQL, visit our
+                            <a href="https://docs.ted.europa.eu/" target="_blank" rel="noopener noreferrer">documentation website</a>.
+                        </p>
+
+                        <h3>How to use this tool</h3>
+                        <ul>
+                            <li>Use the <b>Search</b> tab to look up a notice by its publication number (e.g. <code>00676595-2024</code>).</li>
+                            <li>Click <b>pick a random notice</b> to explore a recent notice chosen at random.</li>
+                            <li>Results appear in the <b>Explore</b> tab as a collapsible tree of RDF triples.</li>
+                            <li>Use <b>Tree</b> view for a hierarchical, navigable structure.</li>
+                            <li>Use <b>Turtle</b> view to see the raw RDF serialization.</li>
+                            <li>Use <b>Backlinks</b> view to see which other resources reference the current one.</li>
+                            <li>Click the <i class="bi bi-clock-history"></i> history button in the Search tab to revisit a past search; click <b>Clear history</b> at the bottom of that menu to wipe the list.</li>
+                        </ul>
+
+                        <h3>Navigating the tree</h3>
+                        <ul>
+                            <li>Click any <span class="badge text-info-emphasis bg-info-subtle">type</span> badge to drill into that resource. Badge text reads "Type identifier" (e.g. "Lot LOT-0001", "SettledContract CON-0001") or just "Type" when the resource has no identifier.</li>
+                            <li>Your path is shown as a breadcrumb at the top of the Explore tab. Click any step to jump back.</li>
+                            <li>Each nested card shows a subject (e.g. a Lot, an Organization) with its properties.</li>
+                            <li>Click the <i class="bi bi-house-door"></i> icon in the breadcrumb to return to the notice you started with.</li>
+                        </ul>
+
+                        <h3>Procedure timeline</h3>
+                        <p>
+                            When you search a notice, its procedure timeline is shown in the Search tab and as a collapsible mini-card above the tree in the Explore tab.
+                            Every notice within the same procedure is listed with colour-coded cards:
+                            <span class="text-success">green</span> for the original publication,
+                            <span class="text-warning">yellow</span> for subsequent amendments
+                            (marked with a <code>v2</code>, <code>v3</code>, … badge next to the publication number).
+                            Cards are ordered oldest-first; same-day amendments are broken by version.
+                            Click any notice in the timeline to navigate to it.
+                        </p>
+
+                        <h3>SPARQL mode</h3>
+                        <p>
+                            Switch the Search tab to <b>SPARQL</b> mode to run custom CONSTRUCT or DESCRIBE queries against the TED SPARQL endpoint.
+                            The query editor has syntax highlighting for SPARQL.
+                            For a library of example queries, see the
+                            <a href="https://data.ted.europa.eu/" target="_blank" rel="noopener noreferrer">TED Open Data Service</a>.
+                        </p>
+
+                        <h3>Sharing</h3>
+                        <p>
+                            Click the <i class="bi bi-share"></i> share button to copy a URL that loads the current notice or query directly.
+                            Paste it into an email, a ticket, or another browser tab to share your exploration.
+                        </p>
+
+                        <h3>Questions & feedback</h3>
+                        <p>
+                            For questions and feedback, please visit our
+                            <a href="https://github.com/OP-TED/ted-open-data-explorer/discussions" target="_blank" rel="noopener noreferrer">GitHub Discussions</a> forum.
+                        </p>
+                    </div>
+
+                    <!-- Right Column - Third-Party Components -->
+                    <div class="col-lg-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Third-Party Components</h5>
+                            </div>
+                            <div class="card-body">
+                                <h6>Application</h6>
+                                <ul class="list-unstyled">
+                                    <li class="mb-3">
+                                        <strong>Bootstrap</strong> (v5.3.8)
+                                        <br><small class="text-muted">CSS framework for styling and components</small>
+                                        <br><small class="text-secondary">License: MIT</small>
+                                    </li>
+                                    <li class="mb-3">
+                                        <strong>Bootstrap Icons</strong> (v1.11.3)
+                                        <br><small class="text-muted">Icon library</small>
+                                        <br><small class="text-secondary">License: MIT</small>
+                                    </li>
+                                    <li class="mb-3">
+                                        <strong>CodeMirror</strong> (v6)
+                                        <br><small class="text-muted">SPARQL and Turtle editors</small>
+                                        <br><small class="text-secondary">License: MIT</small>
+                                    </li>
+                                    <li class="mb-3">
+                                        <strong>codemirror-lang-sparql</strong> (v2.0.0)
+                                        <br><small class="text-muted">SPARQL syntax highlighting</small>
+                                        <br><small class="text-secondary">License: MIT</small>
+                                    </li>
+                                    <li class="mb-3">
+                                        <strong>codemirror-lang-turtle</strong>
+                                        <br><small class="text-muted">Turtle syntax highlighting</small>
+                                        <br><small class="text-secondary">License: MIT</small>
+                                    </li>
+                                    <li class="mb-3">
+                                        <strong>N3.js</strong> (v1.23.1)
+                                        <br><small class="text-muted">RDF/Turtle parser</small>
+                                        <br><small class="text-secondary">License: MIT</small>
+                                    </li>
+                                </ul>
+
+                                <h6 class="mt-4">Development Tools</h6>
+                                <ul class="list-unstyled">
+                                    <li class="mb-3">
+                                        <strong>Express</strong>
+                                        <br><small class="text-muted">Local CORS proxy server</small>
+                                        <br><small class="text-secondary">License: MIT</small>
+                                    </li>
+                                    <li class="mb-3">
+                                        <strong>cors</strong>
+                                        <br><small class="text-muted">CORS middleware for Express</small>
+                                        <br><small class="text-secondary">License: MIT</small>
+                                    </li>
+                                    <li class="mb-3">
+                                        <strong>esbuild</strong>
+                                        <br><small class="text-muted">CodeMirror bundler</small>
+                                        <br><small class="text-secondary">License: MIT</small>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="d-flex w-100 align-items-center">
+        <div class="small text-muted ml-3 d-flex align-items-center">
+            <span id="data-period"></span>
+            <span id="data-period-info" class="bi bi-info-circle ms-1" tabindex="0" role="img"
+                  aria-label="Data period information" style="display: none; cursor: help;"
+                  data-bs-toggle="tooltip" data-bs-placement="top"
+                  title="Publication dates of the earliest and most recent notices available in our dataset."></span>
+        </div>
+        <div class="flex-grow-1 text-center small text-muted">&copy; Publications Office of the EU</div>
+        <div class="progress mr-3 position-relative" style="width: 10%; min-width: 100px">
+            <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated bg-info"
+                 role="progressbar" style="width: 0%"></div>
+            <span id="query-timer" class="position-absolute w-100 text-center small text-muted"
+                  style="top: 0; left: 0; line-height: 1rem; font-size: 0.65rem; font-weight: 600;"></span>
+        </div>
+        <!-- Stop button — only visible while a SPARQL query is in flight. -->
+        <button id="stop-query-btn" class="btn p-0 align-items-center justify-content-center"
+                aria-label="Cancel query" data-bs-toggle="tooltip" data-bs-placement="top"
+                title="Cancel query"
+                style="display: none; font-size: 1.2rem; line-height: 1; margin-left: 0.5rem; color: #dc3545; border: none;">
+            <i class="bi bi-x-circle-fill"></i>
+        </button>
+    </footer>
+
+    <!-- N3 parser (Turtle parsing) -->
+    <script src="https://cdn.jsdelivr.net/npm/n3@1.23.1/browser/n3.min.js"></script>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- App entry point -->
+    <script src="src/js/app.js" type="module"></script>
+</body>
 </html>
-<style>
-    html, body {
-        height: 100%;
-        margin: 0;
-        padding: 0;
-    }
-
-    body {
-        display: flex;
-        flex-direction: column;
-    }
-
-    #app {
-        flex: 1 0 auto;
-        margin-bottom: 40px;
-    }
-
-    .ted-header {
-        background-color: #faf9fb;
-        /* border-bottom: 1px solid #dee2e6; */
-        /*  padding: 0.5rem 0; */
-    }
-
-    .ted-footer {
-        height: 30px;
-        background-color: #faf9fb;
-        border-top: 1px solid #8e8c8c;
-        align-items: center;
-        padding: 10px 20px;
-        flex-shrink: 0; /* Prevent footer from shrinking */
-    }
-
-
-    .ted-container {
-        max-width: 100%;
-        padding: 0 15px;
-    }
-
-    .ted-brand {
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        text-decoration: none;
-        color: #000;
-        font-size: 1.25rem;
-        padding: 10px 0;
-    }
-
-    .ted-brand img {
-        vertical-align: middle;
-    }
-
-    .ted-header::after {
-        content: '';
-        display: block;
-        width: 100%;
-        height: 5px;
-        background-color: #28a745;
-    }
-
-    .ted-brand span {
-        font-weight: 500;
-    }
-
-    #app {
-        padding: 10px;
-    }
-</style>

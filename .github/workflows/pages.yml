@@ -1,0 +1,56 @@
+name: Deploy to GitHub Pages
+
+# The new (post-rewrite) site has no build step. The repo carries
+# index.html and src/ directly, plus a pre-built CodeMirror bundle in
+# src/vendor/. Deployment is just "stage those files and upload them" —
+# no Node setup, no npm install, no bundler.
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time, queued. Don't cancel an in-flight deploy because
+# we want production runs to complete.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Stage only the files that should be publicly served. Excludes
+      # package.json, scripts/, test/, planning docs, mockup.html, etc.
+      #
+      # IMPORTANT: `src/` is the deploy boundary. Anything committed under
+      # that path is published to GitHub Pages on the next main-branch
+      # push. Do not commit secrets, scratch queries, fixtures, or local
+      # mocks to `src/`. If you need a file that shouldn't ship, put it
+      # somewhere else (e.g. `scripts/`, `test/`, or a tracked-but-ignored
+      # path outside `src/`).
+      - name: Stage site
+        run: |
+          mkdir _site
+          cp index.html _site/
+          cp -r src _site/
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

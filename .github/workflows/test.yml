@@ -1,0 +1,32 @@
+name: Test
+
+# Runs the node:test suite on every push to main/develop and on every
+# pull request. The suite has zero dependencies (node:test is built into
+# Node 20), so there is no `npm install` step — checkout, set up Node,
+# run the tests.
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+
+# One test run at a time per ref. Rapid pushes to the same PR branch
+# cancel the previous in-flight run so we only pay for the latest commit.
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run tests
+        run: npm test
