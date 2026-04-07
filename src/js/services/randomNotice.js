@@ -18,11 +18,14 @@
 // SPARQL endpoint for any notice published on that day. If none is found
 // (weekends and holidays are common offenders) expand the window and retry.
 
-import { doSPARQL } from './sparqlService.js';
+import { doSPARQL as defaultDoSPARQL } from './sparqlService.js';
 
 const LOOKBACK_DAYS = 60;
 const MAX_ATTEMPTS = 10;
 const MAX_RANGE_DAYS = 14;
+
+// Indirect call so tests can inject a stub via __setDoSPARQLForTesting().
+let _doSPARQL = defaultDoSPARQL;
 
 // Pick a random publication number. Throws if every attempt fails — the
 // caller (SearchPanel._lucky) is responsible for surfacing the failure to
@@ -89,7 +92,7 @@ async function _queryRandomNoticeInRange(startDate, endDate) {
   `;
 
   try {
-    const { quads } = await doSPARQL(query);
+    const { quads } = await _doSPARQL(query);
     for (const quad of quads) {
       if (quad.predicate.value.includes('hasNoticePublicationNumber')) {
         return quad.object.value;
@@ -102,4 +105,20 @@ async function _queryRandomNoticeInRange(startDate, endDate) {
   }
 }
 
-export { getRandomPublicationNumber };
+// ─────────────────────────────────────────────────────────────────
+// Test-only hooks. Same pattern as labelService: an explicit setter
+// for the doSPARQL stub so tests can drive the retry loop without
+// hitting the real endpoint, and a reset to restore the real import
+// between tests. Production code should never touch these.
+function __setDoSPARQLForTesting(stub) {
+  _doSPARQL = stub || defaultDoSPARQL;
+}
+function __resetForTesting() {
+  _doSPARQL = defaultDoSPARQL;
+}
+
+export {
+  getRandomPublicationNumber,
+  __setDoSPARQLForTesting,
+  __resetForTesting,
+};
