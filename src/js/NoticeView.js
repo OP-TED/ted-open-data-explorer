@@ -201,11 +201,15 @@ class NoticeView {
       if (token !== this._fetchToken) return;
 
       if (!procedureIds.length) {
+        // Zero procedures means either the notice doesn't exist or it
+        // exists but has no procurement procedure attached. Both cases
+        // are handled by DataView's "Notice not found" state on the
+        // Explore tab (triggered by the SPARQL CONSTRUCT also returning
+        // zero triples, which happens in lockstep with this branch).
+        // Hide the entire procedure-timeline card here so the user
+        // doesn't see a second, less clear message on the Search tab.
         this.loadingEl.style.display = 'none';
-        const empty = document.createElement('div');
-        empty.className = 'text-muted p-2';
-        empty.textContent = 'No procedures found for this notice';
-        this.proceduresContainer.appendChild(empty);
+        this.resultsCard.style.display = 'none';
         this.explorerProcedureMini.style.display = 'none';
         return;
       }

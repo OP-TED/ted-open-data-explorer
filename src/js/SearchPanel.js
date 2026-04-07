@@ -91,6 +91,12 @@ class SearchPanel {
     }
   }
 
+  // Public entry point so other panels (DataView's not-found state) can
+  // trigger the same lucky flow without reaching into private methods.
+  pickRandom() {
+    return this._lucky();
+  }
+
   // Show / hide an inline error message inside the lucky-hint paragraph.
   // Lives next to the lucky link itself so the user sees the failure
   // exactly where they clicked, instead of having to check the console.

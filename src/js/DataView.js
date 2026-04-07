@@ -44,10 +44,14 @@ import { getLabel } from './facets.js';
 import { TreeRenderer } from './TreeRenderer.js';
 
 class DataView {
-  constructor(controller) {
+  // `pickRandom` is an optional callback wired from app.js to
+  // SearchPanel.pickRandom(). It fires when the user clicks the
+  // "pick a random notice" link inside the not-found state.
+  constructor(controller, { pickRandom } = {}) {
     this.controller = controller;
     this.viewMode = 'tree';
     this.turtleEditor = null;
+    this.pickRandom = pickRandom || (() => {});
 
     // DOM refs
     this.card = document.getElementById('data-card');
@@ -59,6 +63,14 @@ class DataView {
     this.turtleContainer = document.getElementById('turtle-container');
     this.backlinksContainer = document.getElementById('backlinks-container');
     this.breadcrumbEl = document.getElementById('data-breadcrumb');
+
+    // Not-found state shown when a notice-number search returns
+    // zero triples. Replaces the Tree/Turtle/Backlinks trio with a
+    // dedicated message so the user doesn't have to interpret
+    // "0 triples" as "the notice doesn't exist".
+    this.notFoundEl = document.getElementById('data-not-found');
+    this.notFoundPubEl = document.getElementById('data-not-found-pub');
+    this.viewModeGroup = this.card?.querySelector('.btn-group[role="group"]');
 
     this.treeRenderer = new TreeRenderer(this.treeContainer);
 
@@ -73,6 +85,16 @@ class DataView {
         this._showCurrentView();
       });
     });
+
+    // "Pick a random notice" link in the not-found state. Routes to the
+    // same lucky flow as the Search tab's link so the two stay in sync.
+    const notFoundLucky = document.getElementById('data-not-found-lucky');
+    if (notFoundLucky) {
+      notFoundLucky.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.pickRandom();
+      });
+    }
   }
 
   _listen() {
@@ -115,6 +137,7 @@ class DataView {
 
     this.errorEl.style.display = 'none';
     this.placeholderEl.style.display = 'none';
+    this._hideNotFound();
 
     if (error) {
       this.errorEl.textContent = error.message || 'Query failed';
@@ -129,8 +152,42 @@ class DataView {
       return;
     }
 
+    // Notice-number search with zero results = the notice doesn't exist.
+    // Any real notice produces at least rdf:type triples, so an empty
+    // CONSTRUCT on a well-formed publication number is a strong "not
+    // found" signal. Show a dedicated state instead of an empty tree
+    // labelled "0 triples", which users can't distinguish from a real
+    // empty notice. Also ask the controller to evict the phantom entry
+    // from the History dropdown so typos don't pollute recent searches.
+    if (currentFacet?.type === 'notice-number' && results.size === 0) {
+      this._showNotFound(currentFacet.value);
+      this.controller.removeFacetByValue?.(currentFacet.value);
+      return;
+    }
+
     this.titleEl.textContent = `${this._titleFor(currentFacet)} — ${results.size.toLocaleString()} triples`;
     this._renderView(results);
+  }
+
+  _showNotFound(publicationNumber) {
+    // Title: just the notice number. The "— N triples" suffix we use
+    // for successful loads would leak "0 triples" here, which is the
+    // confusing framing we're trying to replace.
+    this.titleEl.textContent = `Notice ${publicationNumber}`;
+    if (this.notFoundPubEl) this.notFoundPubEl.textContent = publicationNumber;
+    if (this.notFoundEl) this.notFoundEl.style.display = '';
+    // Hide the Tree/Turtle/Backlinks toggle — nothing meaningful to switch to.
+    if (this.viewModeGroup) this.viewModeGroup.style.display = 'none';
+    // And hide the three view containers so the not-found state stands alone.
+    this.treeContainer.style.display = 'none';
+    this.turtleContainer.style.display = 'none';
+    this.backlinksContainer.style.display = 'none';
+    this._clearViews();
+  }
+
+  _hideNotFound() {
+    if (this.notFoundEl) this.notFoundEl.style.display = 'none';
+    if (this.viewModeGroup) this.viewModeGroup.style.display = '';
   }
 
   // Title for the data card. For named-node and query facets the label

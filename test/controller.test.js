@@ -274,6 +274,60 @@ test('_loadFromSession returns empty list for corrupted JSON', () => {
   assert.equal(controller.facetsList.length, 0);
 });
 
+// ── removeFacetByValue (phantom history cleanup) ─────────────────
+
+test('removeFacetByValue removes a notice-number entry by publication number', async () => {
+  const controller = new ExplorerController({ doSPARQL: async () => ({ quads: [], size: 0, rawTurtle: '' }) });
+  await controller.search(createPublicationNumberFacet(PUB_A));
+  await controller.search(createPublicationNumberFacet(PUB_B));
+  assert.equal(controller.facetsList.length, 2);
+
+  controller.removeFacetByValue('00172531-2026');
+  assert.equal(controller.facetsList.length, 1);
+  assert.equal(controller.facetsList[0].value, '00149228-2024');
+});
+
+test('removeFacetByValue is a no-op when no entry matches', () => {
+  const controller = new ExplorerController({ doSPARQL: async () => ({ quads: [], size: 0, rawTurtle: '' }) });
+  controller.facetsList = [createPublicationNumberFacet(PUB_A)];
+  controller.removeFacetByValue('99999999-9999');
+  assert.equal(controller.facetsList.length, 1, 'list should be unchanged');
+});
+
+test('removeFacetByValue only matches notice-number facets, not other types with the same value field', () => {
+  const controller = new ExplorerController({ doSPARQL: async () => ({ quads: [], size: 0, rawTurtle: '' }) });
+  // Seed the list directly (bypassing validation) with a hypothetical
+  // non-notice entry that happens to carry the same string in a
+  // 'value' field. removeFacetByValue must ignore it.
+  controller.facetsList = [
+    { type: 'query', value: '00172531-2026', query: 'SELECT * WHERE { ?s ?p ?o }' },
+    createPublicationNumberFacet('00172531-2026'),
+  ];
+  controller.removeFacetByValue('00172531-2026');
+  assert.equal(controller.facetsList.length, 1);
+  assert.equal(controller.facetsList[0].type, 'query');
+});
+
+test('removeFacetByValue persists the removal to sessionStorage', () => {
+  const controller = new ExplorerController({ doSPARQL: async () => ({ quads: [], size: 0, rawTurtle: '' }) });
+  controller.facetsList = [
+    createPublicationNumberFacet(PUB_A),
+    createPublicationNumberFacet(PUB_B),
+  ];
+  controller._saveToSession();
+  assert.equal(
+    JSON.parse(globalThis.sessionStorage.getItem('explorer-facets-v3')).length,
+    2,
+  );
+
+  controller.removeFacetByValue('00172531-2026');
+  assert.equal(
+    JSON.parse(globalThis.sessionStorage.getItem('explorer-facets-v3')).length,
+    1,
+    'sessionStorage should reflect the removal',
+  );
+});
+
 // ── Identity preservation (M1 + M6) ──────────────────────────────
 
 test('identity: breadcrumb[0] is the same reference as facetsList[0] after search', async () => {

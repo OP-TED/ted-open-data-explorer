@@ -83,7 +83,9 @@ new NoticeView(controller, {
   showExplorerTab,
   setSearchInput: (v) => searchPanel.setInputValue(v),
 });
-new DataView(controller);
+new DataView(controller, {
+  pickRandom: () => searchPanel.pickRandom(),
+});
 new BacklinksView(controller);
 
 wireProgressBar(controller);

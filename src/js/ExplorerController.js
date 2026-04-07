@@ -180,6 +180,18 @@ class ExplorerController extends EventTarget {
     this._emit('facets-list-changed');
   }
 
+  // Remove a notice-number facet from the persistent history by its
+  // publication-number value. Used by DataView when a search resolves
+  // to zero triples (i.e. the notice does not exist) so the phantom
+  // entry doesn't pollute the History dropdown. No-op if no match.
+  removeFacetByValue(publicationNumber) {
+    const idx = this.facetsList.findIndex(
+      f => f.type === 'notice-number' && f.value === publicationNumber
+    );
+    if (idx < 0) return;
+    this.removeFacet(idx);
+  }
+
   // ── URL sharing ──
 
   getShareableUrl() {

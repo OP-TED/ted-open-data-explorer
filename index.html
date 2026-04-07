@@ -206,6 +206,25 @@
                     <div id="backlinks-content"></div>
                 </div>
 
+                <!-- Shown when a notice-number search returns zero triples. Replaces
+                     the empty tree view with a clear "not found" message so the
+                     user doesn't have to interpret "0 triples" as "doesn't exist". -->
+                <div id="data-not-found" class="text-center py-5" style="display: none;">
+                    <div class="mb-3" style="font-size: 3rem; color: #adb5bd;">
+                        <i class="bi bi-search"></i>
+                    </div>
+                    <h5 class="text-muted mb-2">Notice not found</h5>
+                    <p class="text-muted mb-0">
+                        No notice with publication number
+                        <code id="data-not-found-pub"></code>
+                        was found in the dataset.
+                    </p>
+                    <p class="text-muted small mt-3 mb-0">
+                        Double-check the publication number, or
+                        <a href="#" id="data-not-found-lucky">click here to pick a random notice</a>.
+                    </p>
+                </div>
+
                 <div id="data-placeholder" class="text-center text-muted py-4 fst-italic">
                     Execute a query to see RDF data
                 </div>
