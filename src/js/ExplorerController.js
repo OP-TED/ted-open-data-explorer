@@ -194,11 +194,22 @@ class ExplorerController extends EventTarget {
 
   // ── URL sharing ──
 
+  // Build a shareable URL for the current facet. Only the identity-defining
+  // fields are serialised — enrichment (publicationDate, noticeType, etc.)
+  // is stripped because it would:
+  //   - bloat the URL (234 chars → ~90 chars for notice-number facets),
+  //   - freeze a point-in-time snapshot of metadata that gets overwritten
+  //     on load anyway by fresh enrichment from the TED API,
+  //   - leak verbose JSON into URL previews in chat clients.
+  // The recipient's app re-enriches from the live endpoint on load, so
+  // they see fresher metadata than a URL with baked-in values would carry.
   getShareableUrl() {
     const facet = this.currentFacet;
     if (!facet) return null;
+    const stripped = _stripFacetForSharing(facet);
+    if (!stripped) return null;
     const url = new URL(window.location.href);
-    url.searchParams.set('facet', JSON.stringify(facet));
+    url.searchParams.set('facet', JSON.stringify(stripped));
     return url.toString();
   }
 
@@ -381,6 +392,26 @@ class ExplorerController extends EventTarget {
       .map(f => validateFacet(f))
       .filter(f => f !== null);
   }
+}
+
+// Strip a facet down to its identity-defining fields for serialisation
+// into a shareable URL. Returns null for facet shapes we don't know how
+// to share (the UI should also hide the share button in those cases).
+function _stripFacetForSharing(facet) {
+  if (!facet) return null;
+  if (facet.type === 'notice-number') {
+    return { type: 'notice-number', value: facet.value };
+  }
+  if (facet.type === 'named-node') {
+    return {
+      type: 'named-node',
+      term: { termType: 'NamedNode', value: facet.term?.value },
+    };
+  }
+  if (facet.type === 'query') {
+    return { type: 'query', query: facet.query };
+  }
+  return null;
 }
 
 export { ExplorerController };

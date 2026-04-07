@@ -225,6 +225,33 @@ test('URL round-trip: getShareableUrl produces a URL that initFromUrlParams can 
   assert.equal(consumer.currentFacet.value, '00172531-2026');
 });
 
+test('getShareableUrl strips enrichment fields, keeping only identity', async () => {
+  const dummyResults = { quads: [], size: 1, rawTurtle: '' };
+  const controller = new ExplorerController({ doSPARQL: async () => dummyResults });
+  await controller.search(createPublicationNumberFacet(PUB_A));
+
+  // Enrich the facet with the same kind of metadata NoticeView attaches
+  // after the TED API resolves the procedure.
+  controller.enrichNoticeFacet(PUB_A, {
+    publicationDate: '2026-01-15',
+    noticeType: 'Contract notice',
+    formType: 'F02',
+    buyerCountry: 'BE',
+    customizationId: 'eforms-sdk-2.0.0',
+    noticeVersion: '01',
+  });
+
+  const shareUrl = controller.getShareableUrl();
+  const facetParam = new URL(shareUrl).searchParams.get('facet');
+  const parsed = JSON.parse(facetParam);
+
+  // Only identity-defining fields survive.
+  assert.deepEqual(parsed, { type: 'notice-number', value: PUB_A });
+  assert.equal(parsed.publicationDate, undefined);
+  assert.equal(parsed.noticeType, undefined);
+  assert.equal(parsed.timestamp, undefined);
+});
+
 test('URL round-trip: reports status:invalid reason:shape for a garbage facet', () => {
   setLocation('http://localhost:8080/?facet=' + encodeURIComponent('{"value":"foo"}'));
   const controller = new ExplorerController({ doSPARQL: async () => ({ quads: [], size: 0, rawTurtle: '' }) });

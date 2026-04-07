@@ -40,6 +40,7 @@ import {
   turtle,
 } from '../vendor/codemirror-bundle.js';
 import { eclipseHighlightStyle, eclipseTheme } from './cm-theme.js';
+import { copyToClipboard } from './clipboardCopy.js';
 import { getLabel } from './facets.js';
 import { TreeRenderer } from './TreeRenderer.js';
 
@@ -56,6 +57,7 @@ class DataView {
     // DOM refs
     this.card = document.getElementById('data-card');
     this.titleEl = document.getElementById('data-card-title');
+    this.shareBtn = document.getElementById('data-share-btn');
     this.loadingEl = document.getElementById('data-loading');
     this.errorEl = document.getElementById('data-error');
     this.placeholderEl = document.getElementById('data-placeholder');
@@ -95,6 +97,34 @@ class DataView {
         this.pickRandom();
       });
     }
+
+    if (this.shareBtn) {
+      this.shareBtn.addEventListener('click', () => this._share());
+    }
+  }
+
+  // Copy the shareable URL for the currently focused facet to the
+  // clipboard, mirroring the Search tab's share button. Lives here too
+  // so users can share whatever they're actually looking at — including
+  // deep named-node states that the Search-tab button can't represent.
+  async _share() {
+    const url = this.controller.getShareableUrl();
+    if (!url) return;
+    const copied = await copyToClipboard(url);
+    this._flashShareIcon(copied);
+  }
+
+  _flashShareIcon(success) {
+    if (!this.shareBtn) return;
+    const original = '<i class="bi bi-share"></i>';
+    this.shareBtn.innerHTML = success
+      ? '<i class="bi bi-check"></i>'
+      : '<i class="bi bi-x text-danger"></i>';
+    if (!success) this.shareBtn.title = 'Could not copy to clipboard';
+    setTimeout(() => {
+      this.shareBtn.innerHTML = original;
+      this.shareBtn.title = 'Copy shareable URL';
+    }, 1500);
   }
 
   _listen() {
@@ -138,6 +168,7 @@ class DataView {
     this.errorEl.style.display = 'none';
     this.placeholderEl.style.display = 'none';
     this._hideNotFound();
+    this._setShareBtnVisible(false);
 
     if (error) {
       this.errorEl.textContent = error.message || 'Query failed';
@@ -166,7 +197,12 @@ class DataView {
     }
 
     this.titleEl.textContent = `${this._titleFor(currentFacet)} — ${results.size.toLocaleString()} triples`;
+    this._setShareBtnVisible(true);
     this._renderView(results);
+  }
+
+  _setShareBtnVisible(visible) {
+    if (this.shareBtn) this.shareBtn.style.display = visible ? '' : 'none';
   }
 
   _showNotFound(publicationNumber) {

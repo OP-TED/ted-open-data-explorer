@@ -284,6 +284,23 @@ nav > .nav-tabs {
 #data-breadcrumb {
   font-size: 0.85rem;
 }
+
+/* Inline share-the-current-view button next to the data card title.
+   Sized to match the title's visual weight, with a subtle hover circle
+   so it reads as clickable instead of decorative. */
+.data-share-btn {
+  width: 2rem;
+  height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #6c757d;
+}
+.data-share-btn:hover,
+.data-share-btn:focus {
+  background-color: #e9ecef;
+  color: #212529;
+}
 #data-breadcrumb .breadcrumb-item + .breadcrumb-item::before {
   content: "›";
 }

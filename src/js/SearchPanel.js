@@ -11,8 +11,10 @@
  * or implied. See the Licence for the specific language governing permissions and limitations under
  * the Licence.
  */
-// SearchPanel — the Search tab's notice input, history dropdown and share button.
-// SPARQL mode is handled by a separate class (SparqlPanel).
+// SearchPanel — the Search tab's notice input and history dropdown.
+// SPARQL mode is handled by a separate class (SparqlPanel). Sharing the
+// current view lives in DataView (next to the data card title) since
+// that's where the user is actually looking at what they want to share.
 
 import { createPublicationNumberFacet, getLabel } from './facets.js';
 import { getRandomPublicationNumber } from './services/randomNotice.js';
@@ -35,7 +37,6 @@ class SearchPanel {
     this.input = document.getElementById('search-input');
     this.searchBtn = document.getElementById('search-btn');
     this.luckyLink = document.getElementById('lucky-link');
-    this.shareBtn = document.getElementById('share-btn');
     this.datalist = document.getElementById('search-history');
     this.historyMenu = document.getElementById('history-menu');
 
@@ -55,7 +56,6 @@ class SearchPanel {
     this.input.addEventListener('keyup', (e) => {
       if (e.key === 'Enter') this._search();
     });
-    this.shareBtn.addEventListener('click', () => this._share());
     this.luckyLink.addEventListener('click', (e) => {
       e.preventDefault();
       this._lucky();
@@ -65,7 +65,6 @@ class SearchPanel {
   _listen() {
     this.controller.addEventListener('facet-changed', () => this._updateUI());
     this.controller.addEventListener('facets-list-changed', () => this._updateUI());
-    this.controller.addEventListener('results-changed', () => this._updateShareBtn());
     this.controller.addEventListener('loading-changed', () => this._updateLoadingState());
   }
 
@@ -116,64 +115,6 @@ class SearchPanel {
     if (el) el.remove();
   }
 
-  async _share() {
-    const url = this.controller.getShareableUrl();
-    if (!url) return;
-
-    let copied = false;
-    try {
-      await navigator.clipboard.writeText(url);
-      copied = true;
-    } catch {
-      copied = this._fallbackCopy(url);
-    }
-    if (copied) {
-      this._flashShareConfirmation();
-    } else {
-      this._flashShareError();
-    }
-  }
-
-  _flashShareConfirmation() {
-    this.shareBtn.innerHTML = '<i class="bi bi-check"></i>';
-    setTimeout(() => {
-      this.shareBtn.innerHTML = '<i class="bi bi-share"></i>';
-    }, 1500);
-  }
-
-  _flashShareError() {
-    // Visible failure path: the user clicked Share, neither clipboard
-    // mechanism worked, and they need to know so they don't paste an
-    // unrelated value thinking it's the share URL.
-    this.shareBtn.innerHTML = '<i class="bi bi-x text-danger"></i>';
-    this.shareBtn.title = 'Could not copy to clipboard';
-    setTimeout(() => {
-      this.shareBtn.innerHTML = '<i class="bi bi-share"></i>';
-      this.shareBtn.title = 'Copy shareable URL';
-    }, 1500);
-  }
-
-  // Best-effort fallback for browsers that block navigator.clipboard.
-  // Returns whether the copy actually succeeded so _share can react.
-  _fallbackCopy(text) {
-    const input = document.createElement('input');
-    input.value = text;
-    document.body.appendChild(input);
-    input.select();
-    let success = false;
-    try {
-      success = document.execCommand('copy');
-    } catch {
-      success = false;
-    }
-    document.body.removeChild(input);
-    return success;
-  }
-
-  _updateShareBtn() {
-    this.shareBtn.style.display = this.controller.currentFacet ? '' : 'none';
-  }
-
   _updateLoadingState() {
     const loading = this.controller.isLoading;
     this.searchBtn.disabled = loading;
@@ -185,7 +126,6 @@ class SearchPanel {
   _updateUI() {
     this._updateDatalist();
     this._updateHistoryMenu();
-    this._updateShareBtn();
   }
 
   // The datalist drives the input's native autocomplete. Only past notice
@@ -330,6 +270,16 @@ class SearchPanel {
       const facet = this.controller.currentFacet;
       if (facet?.type === 'notice-number') {
         this.input.value = facet.value;
+      }
+      // Fresh navigation from a shared link carries explicit intent: the
+      // recipient was sent here to look at a notice, so jump straight to
+      // the Explore tab. Reloads (F5/⌘R) preserve the current tab so the
+      // user lands back where they were. If the Navigation Timing API is
+      // unavailable, default to switching — a fresh share URL is the
+      // overwhelmingly common case.
+      const navType = performance.getEntriesByType('navigation')[0]?.type;
+      if (navType !== 'reload') {
+        this.showExplorerTab();
       }
     }
   }
