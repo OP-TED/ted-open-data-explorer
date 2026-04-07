@@ -1,0 +1,26 @@
+name: Test
+
+# Runs the node:test suite on every push to main/develop and on every
+# pull request. The suite has zero dependencies (node:test is built into
+# Node 20), so there is no `npm install` step — checkout, set up Node,
+# run the tests.
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run tests
+        run: npm test

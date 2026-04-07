@@ -1,0 +1,488 @@
+/*
+ * Copyright 2026 European Union
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
+ * Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work except in
+ * compliance with the Licence. You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/software/page/eupl
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the Licence
+ * is distributed on an "AS IS" basis, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the Licence for the specific language governing permissions and limitations under
+ * the Licence.
+ */
+/* TED Open Data Explorer — custom styles */
+
+:root {
+  --op-green-color: #2c862d;
+  --dark-background-color: #EEEEEE;
+  --light-background-color: #f8f9fa;
+  --border-color: #ddd;
+
+  --ted-primary: #2c862d;
+  --ted-text-color: #fff;
+}
+
+/* ── Page skeleton ── */
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  background: #f8f9fa;
+  overflow: hidden;
+}
+
+.ted-header {
+  background: var(--dark-background-color);
+  border-bottom: 6px solid var(--op-green-color);
+  height: 84px;
+  padding: 0 20px;
+  flex-shrink: 0;
+}
+.ted-header img { height: 60px; margin-right: 10px; }
+.ted-header span { font-size: 1.25rem; font-weight: 600; }
+
+body > footer {
+  height: 42px;
+  background-color: var(--light-background-color);
+  border-top: 1px solid var(--border-color);
+  align-items: center;
+  padding: 0 20px;
+  flex-shrink: 0;
+}
+
+main {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  position: relative;
+}
+main .tab-pane {
+  background: #fff;
+}
+main .tab-pane.active.show {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+/* ── Brand-aligned Bootstrap overrides ── */
+
+/* Swap Bootstrap's default blue primary for the OP green everywhere that
+   primary is used (buttons, links, active states). */
+.btn-primary {
+  background-color: var(--ted-primary);
+  border-color: var(--ted-primary);
+}
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active {
+  background-color: #236b24;
+  border-color: #236b24;
+}
+.btn-primary:disabled {
+  background-color: var(--ted-primary);
+  border-color: var(--ted-primary);
+  opacity: 0.65;
+}
+.text-primary {
+  color: var(--ted-primary) !important;
+}
+
+/* Nav tab leading space matches ted-open-data */
+nav > .nav-tabs {
+  margin-top: 10px;
+  padding-left: 20px;
+}
+
+/* Help tab: third-party components card uses a light header with OP-green
+   text (matches ted-open-data's convention for this specific card). */
+#app-help .card .card-header {
+  background-color: var(--light-background-color);
+  color: var(--ted-primary);
+  border-bottom: 1px solid var(--border-color);
+  font-weight: 500;
+}
+
+/* ── Search tab: Google-style centered search ── */
+
+/* Vertical layout uses two stacked lanes (top: search, bottom: results),
+   and the top lane is itself split into two sub-lanes (title + input).
+   Each lane is `flex: 1 1 0` so the available height is shared by ratio,
+   not by fixed margins. Tweak the `flex` ratios below to rebalance.
+   With every lane centering its content, the title and input each sit in
+   the middle of their slice — adjusting one lane's flex ratio is then
+   the only thing needed to rebalance the whole hero. */
+.search-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  min-height: 0;
+}
+.search-hero-top,
+.search-hero-bottom {
+  flex: 1 1 0;
+  width: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.search-hero-title-lane,
+.search-hero-input-lane {
+  flex: 1 1 0;
+  width: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+/* Title is centered in its lane, search sits at the top of its lane.
+   The half-lane below the centered title becomes natural breathing
+   space between the title and the input row. */
+.search-hero-title-lane {
+  flex: 34 1 0;
+  justify-content: center;
+}
+.search-hero-input-lane {
+  flex: 66 1 0;
+  justify-content: flex-start;
+}
+.search-hero-inner {
+  width: 100%;
+  max-width: 700px;
+}
+.search-hero-prompt {
+  font-size: 1.05rem;
+}
+.search-hero-input {
+  flex: 1;
+}
+.search-hero-btn {
+  background: #fff;
+  border: 1px solid #ced4da;
+  color: #6c757d;
+}
+.search-hero-btn:hover {
+  background: #f8f9fa;
+  border-color: #adb5bd;
+  color: #495057;
+}
+.search-hero-btn:focus {
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+  border-color: #86b7fe;
+}
+.search-hero #notice-results {
+  width: fit-content;
+  max-width: calc(100% - 40px);
+  margin: 0 20px;
+  align-self: center;
+}
+
+.lucky-hint {
+  font-size: 0.85rem;
+  color: #6c757d;
+  text-align: center;
+}
+.lucky-hint a {
+  color: #0d6efd;
+  text-decoration: underline;
+}
+.lucky-hint a:hover {
+  color: #0a58ca;
+}
+
+/* ── Procedure timeline ── */
+
+.procedure-timeline {
+  display: flex;
+  align-items: stretch;
+  overflow-x: auto;
+  padding: 1rem 1.25rem 0.5rem 1.25rem;
+  gap: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: #ced4da transparent;
+}
+.procedure-timeline::-webkit-scrollbar { height: 6px; }
+.procedure-timeline::-webkit-scrollbar-thumb {
+  background: #ced4da;
+  border-radius: 3px;
+}
+.procedure-timeline::-webkit-scrollbar-track { background: transparent; }
+.procedure-timeline::-webkit-scrollbar-button { display: none; }
+
+.timeline-item {
+  position: relative;
+  padding: 8px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  /* Cards keep their natural width and never shrink. white-space:nowrap
+     pins them to a single height regardless of content length so a narrow
+     window can never grow the timeline row vertically — the timeline
+     already scrolls horizontally for that case. */
+  flex-shrink: 0;
+  white-space: nowrap;
+  cursor: pointer;
+  background: white;
+  transition: background 0.15s;
+}
+.timeline-item:hover { background: #f0f7ff; }
+.timeline-item.success { border-left: 3px solid var(--op-green-color); }
+.timeline-item.warning { border-left: 3px solid #ffc107; }
+.timeline-item.current { background: #e8f4fd; border-color: #0d6efd; }
+
+.timeline-item .pub-number { font-weight: 600; }
+.timeline-item .pub-date { color: #666; font-size: 0.75rem; }
+.timeline-item .pub-date-segment + .pub-date-segment { margin-left: 0.75rem; }
+.timeline-item .notice-meta { color: #777; font-size: 0.75rem; }
+.timeline-item .ted-link { font-size: 0.7rem; }
+
+.timeline-arrow {
+  display: flex;
+  align-items: center;
+  padding: 0 4px;
+  color: #999;
+}
+
+/* ── Explorer tab ── */
+
+.data-sticky-header {
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 10;
+  padding: 0 0 8px 0;
+  margin: 0 !important;
+  border-bottom: 1px solid #e9ecef;
+}
+/* The tab-pane's overflow:auto clips at the padding box, so scrolling
+   content leaks through the pt-2 strip above the sticky header. This
+   pseudo bleeds upward into that strip (and sideways into px-3) with an
+   opaque white cover, so the area above the header is never transparent. */
+.data-sticky-header::before {
+  content: '';
+  position: absolute;
+  left: -1rem;
+  right: -1rem;
+  bottom: 100%;
+  height: 0.5rem;
+  background: #fff;
+  pointer-events: none;
+}
+
+#data-breadcrumb {
+  font-size: 0.85rem;
+}
+#data-breadcrumb .breadcrumb-item + .breadcrumb-item::before {
+  content: "›";
+}
+
+.explorer-procedure-chevron {
+  transition: transform 0.2s;
+}
+[aria-expanded="true"] .explorer-procedure-chevron {
+  transform: rotate(90deg);
+}
+
+/* ── Tree view ── */
+
+.tree-view {
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 0.85rem;
+}
+.tree-node {
+  padding: 1px 0;
+}
+.tree-card {
+  border: 1px solid #dee2e6;
+  border-radius: 5px;
+  margin: 4px 0;
+  overflow: hidden;
+}
+.tree-card-header {
+  background: #f8f9fa;
+  padding: 4px 8px;
+  border-bottom: 1px solid #dee2e6;
+  font-weight: 500;
+}
+.tree-card-header .predicate {
+  text-decoration: none;
+}
+.tree-card-header .predicate:hover {
+  text-decoration: underline;
+}
+.tree-card-body {
+  padding: 4px 8px 4px 16px;
+}
+
+.tree-toggle {
+  cursor: pointer;
+  user-select: none;
+  width: 16px;
+  display: inline-block;
+  text-align: center;
+}
+.tree-toggle:hover { color: #0d6efd; }
+
+.tree-type-badge {
+  font-size: 13px;
+  font-weight: 400;
+  vertical-align: middle;
+  margin-left: 4px;
+  text-decoration: none !important;
+}
+
+.tree-node .predicate { color: #0d6efd; }
+.tree-node .literal { color: #2a00ff; }
+.tree-node .datatype { font-size: 0.75em; opacity: 0.6; margin-left: 2px; }
+.tree-node .language { font-size: 0.75em; opacity: 0.6; margin-left: 2px; }
+.tree-node .uri-link {
+  color: #7f0055;
+  cursor: pointer;
+  text-decoration: none;
+}
+.tree-node .uri-link:hover { text-decoration: underline; }
+
+/* Predicates are clickable but visually distinct from subject URIs */
+.tree-node .predicate .uri-link,
+.tree-node .predicate.uri-link {
+  color: #0d6efd;
+  text-decoration: none;
+}
+.tree-node .predicate .uri-link:hover,
+.tree-node .predicate.uri-link:hover {
+  color: #0a58ca;
+  text-decoration: underline;
+}
+
+/* ── Backlinks view ── */
+
+.backlink-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0;
+  padding: 6px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+.backlink-subjects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.backlink-subject {
+  cursor: pointer;
+  text-decoration: none !important;
+}
+.backlink-relation {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  margin-left: auto;
+}
+.backlink-arrow {
+  display: inline-block;
+  width: 30px;
+  height: 2px;
+  background: #999;
+  position: relative;
+  vertical-align: middle;
+}
+.backlink-arrow::after {
+  content: '';
+  position: absolute;
+  right: -1px;
+  top: -4px;
+  border-left: 6px solid #999;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+}
+
+/* ── CodeMirror overrides ── */
+
+.cm-editor {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 0.85rem;
+}
+.cm-editor .cm-scroller {
+  min-height: 200px;
+  max-height: 500px;
+}
+
+/* The SPARQL panel fills the remaining vertical space of the Search tab
+   and its CodeMirror editor grows with it. */
+#panel-sparql {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+#panel-sparql #sparql-editor {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+#panel-sparql .cm-editor {
+  height: 100% !important;
+  flex: 1;
+  min-height: 0;
+}
+#panel-sparql .cm-editor .cm-scroller {
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: auto;
+}
+
+/* The Turtle editor in the Explorer tab grows to fit its content rather
+   than scrolling internally. Two scrollbars on the same axis (the page
+   and the editor) are confusing — letting the editor grow lets the
+   surrounding tab-pane scroll handle long output uniformly with the
+   tree view. visible overflow + auto height means CodeMirror reports
+   its natural size to the layout. */
+#turtle-container .cm-editor {
+  height: auto;
+}
+#turtle-container .cm-editor .cm-scroller {
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: visible;
+}
+
+/* ── Loading overlay ── */
+
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+/* ── Responsive ── */
+
+@media (max-width: 768px) {
+  .backlink-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .backlink-subjects {
+    justify-content: center;
+  }
+}

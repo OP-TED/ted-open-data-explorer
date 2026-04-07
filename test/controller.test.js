@@ -1,0 +1,294 @@
+/*
+ * Copyright 2026 European Union
+ *
+ * Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European
+ * Commission - subsequent versions of the EUPL (the "Licence"); You may not use this work except in
+ * compliance with the Licence. You may obtain a copy of the Licence at:
+ * https://joinup.ec.europa.eu/software/page/eupl
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the Licence
+ * is distributed on an "AS IS" basis, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the Licence for the specific language governing permissions and limitations under
+ * the Licence.
+ */
+// ExplorerController tests — the crown jewel is the request-token race
+// guard in _executeCurrentQuery (test T8 from the pr-test-analyzer's
+// proposal). The URL round-trip and _loadFromSession filter tests are
+// smaller but guard behaviors that silently break with nothing else
+// to catch them.
+
+import { test, beforeEach } from 'node:test';
+import assert from 'node:assert/strict';
+
+// Install globals before importing the code under test.
+import { resetShims, setLocation } from './_helpers.js';
+import { ExplorerController } from '../src/js/ExplorerController.js';
+import { createPublicationNumberFacet } from '../src/js/facets.js';
+
+const PUB_A = '00172531-2026';
+const PUB_B = '00149228-2024';
+
+// Manually-resolvable promise so tests can control exactly when a query
+// "returns" from the stubbed doSPARQL.
+function deferred() {
+  let resolve, reject;
+  const promise = new Promise((res, rej) => { resolve = res; reject = rej; });
+  return { promise, resolve, reject };
+}
+
+beforeEach(() => {
+  resetShims();
+});
+
+// ── The token race ────────────────────────────────────────────────
+
+test('token race: late response from a superseded search does not overwrite fresh state', async () => {
+  // Two deferreds: the first simulates a slow search(A), the second a
+  // fast search(B) that arrives after A was initiated but resolves first.
+  const dA = deferred();
+  const dB = deferred();
+  let callCount = 0;
+  const doSPARQL = (_query) => {
+    callCount++;
+    return callCount === 1 ? dA.promise : dB.promise;
+  };
+
+  const controller = new ExplorerController({ doSPARQL });
+  const facetA = createPublicationNumberFacet(PUB_A);
+  const facetB = createPublicationNumberFacet(PUB_B);
+
+  // Fire both searches without awaiting the first. Each one kicks off an
+  // _executeCurrentQuery that takes a fresh request token.
+  const searchA = controller.search(facetA);
+  const searchB = controller.search(facetB);
+
+  // Resolve B first (the "fresh" query), then A (the "stale" query).
+  const resultsB = { quads: [], size: 42, rawTurtle: 'B' };
+  const resultsA = { quads: [], size: 99, rawTurtle: 'A' };
+  dB.resolve(resultsB);
+  await searchB;
+  dA.resolve(resultsA);
+  await searchA;
+
+  // Fresh results from B must be the survivor. A's late resolution is dropped.
+  assert.equal(controller.results, resultsB,
+    'controller.results should hold B\'s results, not A\'s stale reply');
+  assert.equal(controller.results.size, 42);
+
+  // isLoading should be false once the fresh query finishes. The stale
+  // query's finally branch must not touch it because its token is stale.
+  assert.equal(controller.isLoading, false,
+    'isLoading should be cleared by B, not re-set by stale A');
+
+  // currentFacet is B.
+  assert.equal(controller.currentFacet.value, '00149228-2024');
+});
+
+test('token race: stale error does not clobber a fresh successful result', async () => {
+  const dA = deferred();
+  const dB = deferred();
+  let callCount = 0;
+  const doSPARQL = (_query) => {
+    callCount++;
+    return callCount === 1 ? dA.promise : dB.promise;
+  };
+
+  const controller = new ExplorerController({ doSPARQL });
+  const searchA = controller.search(createPublicationNumberFacet(PUB_A));
+  const searchB = controller.search(createPublicationNumberFacet(PUB_B));
+
+  // B succeeds first; then A rejects late.
+  const resultsB = { quads: [], size: 5, rawTurtle: 'B' };
+  dB.resolve(resultsB);
+  await searchB;
+  dA.reject(new Error('A failed late'));
+  await searchA;
+
+  assert.equal(controller.results, resultsB);
+  assert.equal(controller.error, null,
+    'Stale error from A should not surface after B\'s success');
+});
+
+// ── URL round-trip ────────────────────────────────────────────────
+
+test('URL round-trip: getShareableUrl produces a URL that initFromUrlParams can load', async () => {
+  const dummyResults = { quads: [], size: 1, rawTurtle: '' };
+  const doSPARQL = async () => dummyResults;
+
+  // First controller: run a search, then build the share URL.
+  const producer = new ExplorerController({ doSPARQL });
+  const originalFacet = createPublicationNumberFacet(PUB_A);
+  await producer.search(originalFacet);
+
+  const shareUrl = producer.getShareableUrl();
+  assert.ok(shareUrl.includes('facet='),
+    'Share URL should carry a facet query parameter');
+
+  // Move the shim's location to the share URL and fresh-load it from there.
+  setLocation(shareUrl);
+
+  // Second controller: loads from the URL.
+  resetShimsExceptLocation();
+  setLocation(shareUrl);
+  const consumer = new ExplorerController({ doSPARQL });
+  const result = consumer.initFromUrlParams();
+  assert.equal(result.status, 'loaded', 'initFromUrlParams should report loaded for a valid share URL');
+
+  // Give the microtasks a chance to settle _executeCurrentQuery.
+  await new Promise(r => setTimeout(r, 0));
+
+  assert.equal(consumer.currentFacet.type, 'notice-number');
+  assert.equal(consumer.currentFacet.value, '00172531-2026');
+});
+
+test('URL round-trip: reports status:invalid reason:shape for a garbage facet', () => {
+  setLocation('http://localhost:8080/?facet=' + encodeURIComponent('{"value":"foo"}'));
+  const controller = new ExplorerController({ doSPARQL: async () => ({ quads: [], size: 0, rawTurtle: '' }) });
+  const result = controller.initFromUrlParams();
+  assert.deepEqual(result, { status: 'invalid', reason: 'shape' });
+  assert.equal(controller.currentFacet, null);
+});
+
+test('URL round-trip: reports status:invalid reason:parse for malformed JSON', () => {
+  setLocation('http://localhost:8080/?facet=%7Bnot-json');
+  const controller = new ExplorerController({ doSPARQL: async () => ({ quads: [], size: 0, rawTurtle: '' }) });
+  const result = controller.initFromUrlParams();
+  assert.deepEqual(result, { status: 'invalid', reason: 'parse' });
+  assert.equal(controller.currentFacet, null);
+});
+
+test('URL round-trip: reports status:absent when no ?facet= is present', () => {
+  setLocation('http://localhost:8080/');
+  const controller = new ExplorerController({ doSPARQL: async () => ({ quads: [], size: 0, rawTurtle: '' }) });
+  const result = controller.initFromUrlParams();
+  assert.deepEqual(result, { status: 'absent' });
+});
+
+// ── _loadFromSession filter ───────────────────────────────────────
+
+test('_loadFromSession silently drops non-notice-number entries from old storage', () => {
+  // Seed sessionStorage with a mix of valid notice-number entries and
+  // legacy query entries; the controller should only surface the first.
+  const legacy = [
+    { type: 'notice-number', value: '00172531-2026', timestamp: 1 },
+    { type: 'query', query: 'SELECT * WHERE { ?s ?p ?o }', timestamp: 2 },
+    { type: 'named-node', term: { value: 'http://example.org/x' }, timestamp: 3 },
+  ];
+  globalThis.sessionStorage.setItem('explorer-facets-v3', JSON.stringify(legacy));
+
+  const controller = new ExplorerController({ doSPARQL: async () => ({ quads: [], size: 0, rawTurtle: '' }) });
+
+  // Only the notice-number entry survives the filter.
+  assert.equal(controller.facetsList.length, 1);
+  assert.equal(controller.facetsList[0].type, 'notice-number');
+  assert.equal(controller.facetsList[0].value, '00172531-2026');
+});
+
+test('_loadFromSession returns empty list for corrupted JSON', () => {
+  globalThis.sessionStorage.setItem('explorer-facets-v3', '{not json');
+  const controller = new ExplorerController({ doSPARQL: async () => ({ quads: [], size: 0, rawTurtle: '' }) });
+  assert.equal(controller.facetsList.length, 0);
+});
+
+// ── Identity preservation (M1 + M6) ──────────────────────────────
+
+test('identity: breadcrumb[0] is the same reference as facetsList[0] after search', async () => {
+  const controller = new ExplorerController({ doSPARQL: async () => ({ quads: [], size: 0, rawTurtle: '' }) });
+  await controller.search(createPublicationNumberFacet(PUB_A));
+
+  assert.equal(controller.facetsList.length, 1);
+  assert.equal(controller.breadcrumb[0], controller.facetsList[0],
+    'breadcrumb[0] must be the same reference as facetsList[0]');
+});
+
+test('identity: re-searching the same notice rebinds to the enriched reference', async () => {
+  const controller = new ExplorerController({ doSPARQL: async () => ({ quads: [], size: 0, rawTurtle: '' }) });
+
+  await controller.search(createPublicationNumberFacet(PUB_A));
+  controller.enrichNoticeFacet('00172531-2026', {
+    publicationDate: '2026-03-12+01:00',
+    noticeType: 'can-standard',
+  });
+  const enrichedRef = controller.facetsList[0];
+  assert.equal(enrichedRef.noticeType, 'can-standard');
+
+  // Re-search the same notice. The breadcrumb must wire to the enriched
+  // entry, not a fresh bare copy.
+  await controller.search(createPublicationNumberFacet('172531-2026'));
+  assert.equal(controller.facetsList.length, 1, 'duplicate should not grow the list');
+  assert.equal(controller.breadcrumb[0], enrichedRef,
+    'breadcrumb[0] must be the pre-existing enriched reference');
+  assert.equal(controller.currentFacet.noticeType, 'can-standard',
+    'currentFacet must expose enrichment because identity is preserved');
+});
+
+test('enrichNoticeFacet mutates in place so the breadcrumb sees the update', async () => {
+  const controller = new ExplorerController({ doSPARQL: async () => ({ quads: [], size: 0, rawTurtle: '' }) });
+  await controller.search(createPublicationNumberFacet(PUB_A));
+
+  // Before enrichment, currentFacet has no metadata.
+  assert.equal(controller.currentFacet.noticeType, undefined);
+
+  // Enrich.
+  controller.enrichNoticeFacet('00172531-2026', {
+    publicationDate: '2026-03-12+01:00',
+    noticeType: 'can-standard',
+    buyerCountry: 'ITA',
+  });
+
+  // After enrichment, currentFacet (which points into breadcrumb[0]) must
+  // see the new fields because the mutation was in place.
+  assert.equal(controller.currentFacet.noticeType, 'can-standard');
+  assert.equal(controller.currentFacet.buyerCountry, 'ITA');
+  assert.equal(controller.currentFacet.publicationDate, '2026-03-12+01:00');
+});
+
+test('enrichNoticeFacet cannot clobber identity-defining fields', () => {
+  const controller = new ExplorerController({ doSPARQL: async () => ({ quads: [], size: 0, rawTurtle: '' }) });
+  controller.facetsList = [createPublicationNumberFacet(PUB_A)];
+
+  // Attempt to inject a different type/value via the metadata payload.
+  controller.enrichNoticeFacet('00172531-2026', {
+    type: 'evil',
+    value: 'pwned',
+    timestamp: 0,
+    noticeType: 'can-standard',
+  });
+
+  assert.equal(controller.facetsList[0].type, 'notice-number');
+  assert.equal(controller.facetsList[0].value, '00172531-2026');
+  assert.notEqual(controller.facetsList[0].timestamp, 0);
+  assert.equal(controller.facetsList[0].noticeType, 'can-standard',
+    'Safe fields should still be applied');
+});
+
+test('search() does not mutate the caller-owned facet object', async () => {
+  const controller = new ExplorerController({ doSPARQL: async () => ({ quads: [], size: 0, rawTurtle: '' }) });
+  const original = { type: 'notice-number', value: '00172531-2026' };
+  assert.equal(original.timestamp, undefined);
+  await controller.search(original);
+  assert.equal(original.timestamp, undefined,
+    'search() must not have stamped a timestamp on the caller\'s object');
+  assert.equal(typeof controller.facetsList[0].timestamp, 'number',
+    'the stored copy should have a timestamp');
+});
+
+// ─────────────────────────────────────────────────────────────────
+
+test('clearHistory removes the sessionStorage key entirely', () => {
+  const controller = new ExplorerController({ doSPARQL: async () => ({ quads: [], size: 0, rawTurtle: '' }) });
+  controller.facetsList = [createPublicationNumberFacet(PUB_A)];
+  controller._saveToSession();
+  assert.ok(globalThis.sessionStorage.getItem('explorer-facets-v3') !== null);
+
+  controller.clearHistory();
+  assert.equal(controller.facetsList.length, 0);
+  assert.equal(globalThis.sessionStorage.getItem('explorer-facets-v3'), null,
+    'clearHistory should removeItem, not just write []');
+});
+
+// ── helper used only in this file ─────────────────────────────────
+
+function resetShimsExceptLocation() {
+  globalThis.sessionStorage.clear();
+}
