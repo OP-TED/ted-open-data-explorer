@@ -30,6 +30,20 @@ import { shortLabel } from './namespaces.js';
 // The previous Zod schema enforced this shape; the rewrite now enforces it here.
 const PUBLICATION_NUMBER_PATTERN = /^\s*(\d{1,8})-(\d{4})\s*$/;
 
+// Characters that must never appear in a URI interpolated into a SPARQL
+// query. `<` and `>` would break out of the angle-bracket IRI literal; `"`
+// would break out of a string literal; `\` enables escape sequences;
+// whitespace and control characters are invalid in IRIs per the RDF spec.
+// Used by both validateFacet (URL/sessionStorage boundary) and
+// _describeTermQuery (interpolation boundary for click-time facets).
+const FORBIDDEN_URI_CHARS = /[<>"\\\s\x00-\x1f\x7f]/;
+
+function _isSafeUri(value) {
+  return typeof value === 'string'
+    && value.length > 0
+    && !FORBIDDEN_URI_CHARS.test(value);
+}
+
 // Zero-pad publication numbers to 8 digits so that "12345-2024" and
 // "00012345-2024" hash to the same facet. Returns null for input that
 // doesn't match the format so callers can reject garbage at the boundary.
@@ -88,7 +102,18 @@ WHERE {
 }`;
 }
 
+// Belt-and-braces: facets built at click-time (TermRenderer's click handler,
+// BacklinksView's subject badge click handler) don't go through validateFacet
+// because they come from server-trusted SPARQL responses. That's fine in
+// practice — endpoint output is not user input — but the URI is still
+// interpolated directly into a DESCRIBE query, so we apply the same
+// FORBIDDEN_URI_CHARS check here at the point of interpolation. Any URI
+// that would let `>` or quote characters break out of the IRI literal
+// gets thrown before the query is built.
 function _describeTermQuery(term) {
+  if (!_isSafeUri(term?.value)) {
+    throw new Error(`Unsafe URI for DESCRIBE: ${JSON.stringify(term?.value)}`);
+  }
   return `DEFINE sql:describe-mode "CBD"
 DESCRIBE <${term.value}>`;
 }
@@ -114,20 +139,6 @@ function addUnique(facets, newFacet) {
 }
 
 // ── Validation ──
-
-// Characters that must never appear in a URI injected into a SPARQL query.
-// `<` and `>` would break out of the angle-bracket IRI literal; `"` would
-// break out of a string literal; `\` enables escape sequences; whitespace
-// and control characters are invalid in IRIs by the RDF spec anyway. This
-// rejection is our boundary defence against SPARQL injection via the
-// shareable `?facet=` URL parameter and sessionStorage round-trips.
-const FORBIDDEN_URI_CHARS = /[<>"\\\s\x00-\x1f\x7f]/;
-
-function _isSafeUri(value) {
-  return typeof value === 'string'
-    && value.length > 0
-    && !FORBIDDEN_URI_CHARS.test(value);
-}
 
 // Boundary validator for facets coming from untrusted sources (URL params,
 // sessionStorage). Returns a cleaned-up copy of the facet or null. The

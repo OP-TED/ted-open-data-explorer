@@ -10,6 +10,12 @@ on:
     branches: [ "main", "develop" ]
   pull_request:
 
+# One test run at a time per ref. Rapid pushes to the same PR branch
+# cancel the previous in-flight run so we only pay for the latest commit.
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-latest

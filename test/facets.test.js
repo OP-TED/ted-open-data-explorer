@@ -337,6 +337,32 @@ test('getQuery returns the SPARQL body for each facet kind', () => {
   assert.match(describeSparql, new RegExp(EPO_NOTICE_URI.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
 });
 
+test('getQuery throws on a named-node facet with an unsafe URI (click-time defence)', () => {
+  // Click-time facets built by TermRenderer / BacklinksView skip validateFacet
+  // because they come from server-trusted SPARQL responses. The belt-and-braces
+  // guard inside _describeTermQuery catches any URI that slips through with
+  // injection characters and throws before the DESCRIBE is built.
+  for (const badValue of [
+    'http://evil.test/a>b',
+    'http://evil.test/a"b',
+    'http://evil.test/a b',
+    'http://evil.test/a\\b',
+    'http://evil.test/a\nb',
+  ]) {
+    const facet = { type: 'named-node', term: { value: badValue } };
+    assert.throws(
+      () => getQuery(facet),
+      /Unsafe URI/,
+      `should throw for ${JSON.stringify(badValue)}`,
+    );
+  }
+
+  // Safe URI still works.
+  assert.doesNotThrow(
+    () => getQuery({ type: 'named-node', term: { value: EPO_NOTICE_URI } }),
+  );
+});
+
 // ── facetEquals (tested via addUnique) ─────────────────────────────
 
 test('addUnique appends a new facet and returns its index', () => {

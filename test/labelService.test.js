@@ -186,6 +186,16 @@ test('requestLabel does NOT cache failed batches — failed URIs retry next time
 });
 
 // ── batching reentrancy: the snapshot-and-clear dance ─────────────
+//
+// The reentrancy tests below are REAL-TIME COUPLED to labelService's
+// BATCH_DELAY_MS constant (currently 100ms). We wait 150ms after a request
+// to be sure the batch timer has fired, giving a ~50ms slack on a loaded
+// CI runner. If these tests ever flake under load, the fix is either:
+//   1. Bump the wait to ~300ms (easy, but makes the suite slower)
+//   2. Add an `__advanceBatchTimerForTesting()` hook to labelService and
+//      drive the timer deterministically from the test (cleaner, but
+//      adds a test-only surface to production code)
+// Option 2 is the right long-term answer if we see actual flakes.
 
 test('reentrancy: requests made during an in-flight batch enqueue a fresh batch', async () => {
   // Set up a doSPARQL stub that records each invocation's URI list and
