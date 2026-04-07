@@ -72,6 +72,23 @@ if (typeof globalThis.window === 'undefined') {
 // The stub elements are intentionally dumb — they don't render or
 // reflow anything. Tests that need to inspect what was rendered should
 // use them as opaque sinks ("did this method call appendChild N times").
+//
+// Intentional omissions (add them here when a new test needs them):
+//   - querySelector / querySelectorAll always return null / [] — no
+//     DOM-tree traversal. Tests that want to find child elements should
+//     reach for them through the StubElement's _children array instead.
+//   - no event bubbling — addEventListener stores handlers on each
+//     element but dispatchEvent is not implemented. Simulated clicks
+//     in tests call the handler directly via the controller API.
+//   - no layout metrics — offsetWidth, offsetHeight, getBoundingClientRect
+//     are undefined. Tests that want to verify scroll positioning or
+//     sizing behaviour should use Playwright against the running app.
+//   - requestAnimationFrame runs the callback synchronously, unlike
+//     real browsers which defer to the next paint. Tests that depend
+//     on post-rAF layout reads won't see the real timing.
+// When a test needs something the shim doesn't provide, extend the shim
+// here rather than reaching for JSDOM — the shim is small enough that
+// growing it incrementally stays cheaper than pulling in a full DOM.
 
 class StubElement {
   constructor(id) {

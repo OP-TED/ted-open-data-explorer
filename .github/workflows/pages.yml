@@ -33,6 +33,13 @@ jobs:
 
       # Stage only the files that should be publicly served. Excludes
       # package.json, scripts/, test/, planning docs, mockup.html, etc.
+      #
+      # IMPORTANT: `src/` is the deploy boundary. Anything committed under
+      # that path is published to GitHub Pages on the next main-branch
+      # push. Do not commit secrets, scratch queries, fixtures, or local
+      # mocks to `src/`. If you need a file that shouldn't ship, put it
+      # somewhere else (e.g. `scripts/`, `test/`, or a tracked-but-ignored
+      # path outside `src/`).
       - name: Stage site
         run: |
           mkdir _site

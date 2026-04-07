@@ -471,6 +471,14 @@ class NoticeView {
 
   // After the timeline has been appended to the DOM, scroll it horizontally
   // so the selected notice sits in the visible center.
+  //
+  // Called once per container per render (Search-tab card + Explore-tab
+  // mini-card), so each container gets its own scroll position computed
+  // independently. The Explorer mini-card is collapsed by default, which
+  // means `clientWidth === 0` on the first render and the scrollLeft
+  // assignment is effectively a no-op; it gets recomputed naturally the
+  // next time `_updateHighlight` fires after the card is expanded,
+  // because Bootstrap's collapse reveals the real width at that point.
   _scrollToCurrent(timeline) {
     requestAnimationFrame(() => {
       const currentItem = timeline.querySelector('.timeline-item.current');
