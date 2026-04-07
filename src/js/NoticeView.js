@@ -378,7 +378,12 @@ class NoticeView {
       // reflects "what's currently being looked at", matching the lucky
       // link and History dropdown behaviour.
       this.setSearchInput(notice.publicationNumber);
-      this.controller.search(facet);
+      // Lateral navigation within an already-visible procedure: reset
+      // the breadcrumb (we're switching notices) but don't add the
+      // sibling to History. The Procedure Timeline is already the
+      // contextual UI for these siblings; History is reserved for
+      // notices the user explicitly started from.
+      this.controller.search(facet, { addToHistory: false });
       // Direct user gesture (timeline click) → switch to Explore tab.
       this.showExplorerTab();
     });

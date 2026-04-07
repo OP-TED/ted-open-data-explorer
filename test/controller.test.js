@@ -440,6 +440,38 @@ test('search() does not mutate the caller-owned facet object', async () => {
 
 // ─────────────────────────────────────────────────────────────────
 
+test('search() with addToHistory:false does not add the facet to facetsList', async () => {
+  const controller = new ExplorerController({ doSPARQL: async () => ({ quads: [], size: 0, rawTurtle: '' }) });
+  // Seed with PUB_A via a normal search so History has one entry.
+  await controller.search(createPublicationNumberFacet(PUB_A));
+  assert.equal(controller.facetsList.length, 1);
+
+  // Timeline-style lateral navigation to a sibling PUB_B.
+  await controller.search(createPublicationNumberFacet(PUB_B), { addToHistory: false });
+
+  // PUB_B is now the current facet (breadcrumb reset) but History still
+  // has only the original PUB_A entry.
+  assert.equal(controller.currentFacet.value, PUB_B);
+  assert.equal(controller.facetsList.length, 1);
+  assert.equal(controller.facetsList[0].value, PUB_A);
+});
+
+test('search() with addToHistory:false resolves to the existing canonical reference', async () => {
+  const controller = new ExplorerController({ doSPARQL: async () => ({ quads: [], size: 0, rawTurtle: '' }) });
+  await controller.search(createPublicationNumberFacet(PUB_A));
+  const enriched = controller.facetsList[0];
+  // Simulate NoticeView enrichment attaching metadata.
+  controller.enrichNoticeFacet(PUB_A, { publicationDate: '2026-01-15', buyerCountry: 'BE' });
+
+  // Navigate laterally (sibling click) to the SAME notice we already
+  // have in History — breadcrumb should point at the enriched canonical
+  // reference, not a fresh unenriched clone.
+  await controller.search(createPublicationNumberFacet(PUB_A), { addToHistory: false });
+  assert.equal(controller.currentFacet, enriched,
+    'currentFacet must be the same reference as the enriched history entry');
+  assert.equal(controller.currentFacet.buyerCountry, 'BE');
+});
+
 test('clearHistory removes the sessionStorage key entirely', () => {
   const controller = new ExplorerController({ doSPARQL: async () => ({ quads: [], size: 0, rawTurtle: '' }) });
   controller.facetsList = [createPublicationNumberFacet(PUB_A)];

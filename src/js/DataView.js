@@ -139,12 +139,32 @@ class DataView {
 
   _onFacetChanged() {
     const facet = this.controller.currentFacet;
+    const explorerTabItem = document.getElementById('app-tab-explorer-item');
+    const explorerTabBtn = document.getElementById('app-tab-explorer');
+
     if (!facet) {
       this.card.style.display = 'none';
+      this.placeholderEl.style.display = '';
+      // Hide the Explore tab entirely — there's nothing to explore, so
+      // the affordance itself shouldn't exist. If the user happened to
+      // be sitting on the Explore tab when the facet cleared (e.g. a
+      // clearHistory from the dropdown), bounce them back to Search so
+      // they're not stranded on a tab that just vanished.
+      if (explorerTabItem) explorerTabItem.style.display = 'none';
+      if (explorerTabBtn?.classList.contains('active')) {
+        const searchTabBtn = document.getElementById('app-tab-search');
+        if (searchTabBtn) new bootstrap.Tab(searchTabBtn).show();
+      }
       return;
     }
 
     this.card.style.display = '';
+    this.placeholderEl.style.display = 'none';
+    // Reveal the Explore tab now that there's something to explore.
+    // SearchPanel / NoticeView may call showExplorerTab() after this to
+    // switch to it; the tab needs to be visible first for Bootstrap's
+    // Tab.show() to work.
+    if (explorerTabItem) explorerTabItem.style.display = '';
     this._renderBreadcrumb();
     this._updateBacklinksAvailability(facet);
   }
@@ -165,8 +185,11 @@ class DataView {
   _onResultsChanged() {
     const { results, error, currentFacet } = this.controller;
 
+    // Placeholder visibility is owned by _onFacetChanged — it's the
+    // "nothing loaded yet" affordance and is tied to facet presence, not
+    // results presence. Touching it here caused the cold-load bug where
+    // clearing results flashed the placeholder inside a still-hidden card.
     this.errorEl.style.display = 'none';
-    this.placeholderEl.style.display = 'none';
     this._hideNotFound();
     this._setShareBtnVisible(false);
 
@@ -178,7 +201,6 @@ class DataView {
     }
 
     if (!results) {
-      this.placeholderEl.style.display = '';
       this._clearViews();
       return;
     }

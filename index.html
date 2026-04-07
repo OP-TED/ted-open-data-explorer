@@ -39,7 +39,9 @@
                     Search
                 </button>
             </li>
-            <li class="nav-item" role="presentation">
+            <!-- Explore tab is hidden until there's a facet to explore. The
+                 DataView controller toggles this <li> inside _onFacetChanged. -->
+            <li class="nav-item" role="presentation" id="app-tab-explorer-item" style="display: none;">
                 <button class="nav-link" id="app-tab-explorer" data-bs-toggle="tab"
                         data-bs-target="#app-explorer" type="button" role="tab">
                     Explore
@@ -227,10 +229,15 @@
                         <a href="#" id="data-not-found-lucky">click here to pick a random notice</a>.
                     </p>
                 </div>
+            </div>
 
-                <div id="data-placeholder" class="text-center text-muted py-4 fst-italic">
-                    Execute a query to see RDF data
-                </div>
+            <!-- Safety-net placeholder. Normally unreachable because the
+                 Explore tab itself is hidden when there's no current facet
+                 (see _onFacetChanged), but kept as a fallback in case the
+                 tab is ever shown without loaded content. -->
+            <div id="data-placeholder" class="text-center text-muted py-5 fst-italic">
+                Use the Search tab to select a notice; search results will
+                appear here.
             </div>
         </div>
 

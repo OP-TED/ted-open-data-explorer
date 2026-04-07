@@ -258,6 +258,13 @@ class SearchPanel {
   // activity the user did not request. The history dropdown is the
   // explicit, user-initiated way to revisit a past search.
   async init() {
+    // Hydrate the history dropdown from whatever the controller loaded
+    // out of sessionStorage at construction time. Without this, the
+    // dropdown only populates after the first facets-list-changed event
+    // (i.e. after the next search), which looks to users like "reload
+    // clears history and a new search brings it back."
+    this._updateUI();
+
     const result = this.controller.initFromUrlParams();
     if (result.status === 'invalid') {
       this._showUrlLoadError(result.reason);

@@ -76,16 +76,38 @@ class ExplorerController extends EventTarget {
   // ── Navigation ──
 
   // A new search: notice lookup or custom SPARQL. Resets the breadcrumb and
-  // adds the facet to the persistent search history. When the facet is a
-  // notice-number already in history, the breadcrumb is wired to the
-  // existing (possibly enriched) object, so later enrichment shows up in
-  // `currentFacet` and the History dropdown's active-highlight comparison.
-  async search(facet) {
+  // (by default) adds the facet to the persistent search history. When the
+  // facet is a notice-number already in history, the breadcrumb is wired
+  // to the existing (possibly enriched) object, so later enrichment shows
+  // up in `currentFacet` and the History dropdown's active-highlight
+  // comparison.
+  //
+  // Pass `{ addToHistory: false }` for lateral navigation within an
+  // already-visible context — e.g. clicking a sibling notice in the
+  // Procedure Timeline. Those gestures reset the breadcrumb like a fresh
+  // search (we're switching notices) but should not pollute the History
+  // dropdown with siblings the user didn't explicitly look up. The facet
+  // is still resolved to an existing history entry if one exists, so
+  // enrichment stays consistent.
+  async search(facet, { addToHistory = true } = {}) {
     const stamped = this._withTimestamp(facet);
-    const canonical = this._addToHistory(stamped);
+    const canonical = addToHistory
+      ? this._addToHistory(stamped)
+      : this._resolveExisting(stamped);
     this.breadcrumb = [canonical];
     this.breadcrumbIndex = 0;
     await this._navigated();
+  }
+
+  // Look up a notice-number facet in history without inserting it. Used
+  // when navigating laterally (timeline clicks) so the breadcrumb points
+  // at the canonical enriched entry if we've seen the notice before, but
+  // we don't add a new History entry for a sibling the user never
+  // searched for.
+  _resolveExisting(facet) {
+    if (facet.type !== 'notice-number') return facet;
+    const existing = this.facetsList.find(f => f.value === facet.value);
+    return existing || facet;
   }
 
   // Clicking a backlink: the user is still within the same original notice
