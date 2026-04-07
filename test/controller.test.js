@@ -109,6 +109,90 @@ test('token race: stale error does not clobber a fresh successful result', async
     'Stale error from A should not surface after B\'s success');
 });
 
+// ── cancelCurrentQuery (stop button) ─────────────────────────────
+
+test('cancelCurrentQuery invokes the cancel hook and clears loading state', async () => {
+  const d = deferred();
+  let cancelCallCount = 0;
+  const controller = new ExplorerController({
+    doSPARQL: () => d.promise,
+    cancelAllSparqlRequests: () => {
+      cancelCallCount++;
+      // Production behaviour: the terminated worker causes all pending
+      // promises to reject with a CancelledError. Simulate that here.
+      const err = new Error('SPARQL request cancelled');
+      err.name = 'CancelledError';
+      d.reject(err);
+    },
+  });
+
+  const facet = createPublicationNumberFacet(PUB_A);
+  const searchPromise = controller.search(facet);
+
+  // Let the search advance into the in-flight state.
+  await new Promise(r => setTimeout(r, 0));
+  assert.equal(controller.isLoading, true, 'loading should be true while in flight');
+
+  // User clicks stop.
+  controller.cancelCurrentQuery();
+  assert.equal(cancelCallCount, 1, 'cancel hook should have fired once');
+
+  // Wait for the search promise to settle.
+  await searchPromise;
+
+  // Controller should land in a clean state: no results, no error, not loading.
+  assert.equal(controller.isLoading, false);
+  assert.equal(controller.results, null, 'results should be null after cancel');
+  assert.equal(controller.error, null, 'error should be null after cancel (not a real error)');
+});
+
+test('cancelCurrentQuery is a no-op when no query is in flight', () => {
+  let cancelCallCount = 0;
+  const controller = new ExplorerController({
+    doSPARQL: async () => ({ quads: [], size: 0, rawTurtle: '' }),
+    cancelAllSparqlRequests: () => { cancelCallCount++; },
+  });
+
+  // isLoading is false immediately after construction.
+  assert.equal(controller.isLoading, false);
+  controller.cancelCurrentQuery();
+  assert.equal(cancelCallCount, 0, 'should not call cancel hook when nothing is running');
+});
+
+test('cancelCurrentQuery during a navigation does not affect the fresh search that replaces it', async () => {
+  // Regression guard: after cancelling, the user searches something new.
+  // The cancel must not leave the controller in a broken state that
+  // prevents the fresh search from rendering.
+  const dA = deferred();
+  const dB = deferred();
+  let callCount = 0;
+  const controller = new ExplorerController({
+    doSPARQL: () => { callCount++; return callCount === 1 ? dA.promise : dB.promise; },
+    cancelAllSparqlRequests: () => {
+      const err = new Error('SPARQL request cancelled');
+      err.name = 'CancelledError';
+      dA.reject(err);
+    },
+  });
+
+  const searchA = controller.search(createPublicationNumberFacet(PUB_A));
+  await new Promise(r => setTimeout(r, 0));
+
+  controller.cancelCurrentQuery();
+  await searchA;
+  assert.equal(controller.isLoading, false);
+
+  // Fresh search should work normally.
+  const searchB = controller.search(createPublicationNumberFacet(PUB_B));
+  const resultsB = { quads: [], size: 7, rawTurtle: 'B' };
+  dB.resolve(resultsB);
+  await searchB;
+
+  assert.equal(controller.results, resultsB);
+  assert.equal(controller.error, null);
+  assert.equal(controller.isLoading, false);
+});
+
 // ── URL round-trip ────────────────────────────────────────────────
 
 test('URL round-trip: getShareableUrl produces a URL that initFromUrlParams can load', async () => {

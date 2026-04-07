@@ -158,6 +158,28 @@ async function doSPARQLSelect(query) {
   }
 }
 
+// Cancel every in-flight CONSTRUCT/DESCRIBE. Used by the footer stop
+// button and (internally) by the worker-crash handler. Terminates the
+// worker nuclear-style — all pending promises are rejected with a
+// CancelledError, the worker is killed, and the next doSPARQL call
+// respawns it. Not per-request: a "cancel" here means "stop whatever
+// SPARQL work is happening right now," consistent with the user's
+// mental model of the stop button.
+//
+// Note that this also kills any in-flight labelService batches that
+// happened to be running through the same worker. That's acceptable —
+// labels are URI-keyed, they'll be re-requested next render, and the
+// user clicking Stop is unlikely to care about label decorations.
+function cancelAllSparqlRequests() {
+  if (pendingRequests.size === 0 && !worker) return;
+  const err = new Error('SPARQL request cancelled');
+  err.name = 'CancelledError';
+  for (const pending of pendingRequests.values()) pending.reject(err);
+  pendingRequests.clear();
+  try { worker?.terminate(); } catch { /* already dead */ }
+  worker = null;
+}
+
 // Test-only hook: lets tests inspect pending request count and reset
 // the worker between tests. Production code never touches this.
 function __getPendingCountForTesting() {
@@ -175,6 +197,7 @@ function __resetWorkerForTesting() {
 export {
   doSPARQL,
   doSPARQLSelect,
+  cancelAllSparqlRequests,
   __getPendingCountForTesting,
   __resetWorkerForTesting,
 };

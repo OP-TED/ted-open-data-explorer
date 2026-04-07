@@ -28,16 +28,24 @@
 // and `breadcrumb-changed` events.
 
 import { addUnique, getQuery, validateFacet } from './facets.js';
-import { doSPARQL as defaultDoSPARQL } from './services/sparqlService.js';
+import {
+  doSPARQL as defaultDoSPARQL,
+  cancelAllSparqlRequests as defaultCancelAllSparqlRequests,
+} from './services/sparqlService.js';
 
 const STORAGE_KEY = 'explorer-facets-v3';
 
 class ExplorerController extends EventTarget {
-  // The `doSPARQL` option lets tests inject a stub; production callers
-  // (app.js) pass no arguments and get the real worker-backed service.
-  constructor({ doSPARQL = defaultDoSPARQL } = {}) {
+  // The `doSPARQL` and `cancelAllSparqlRequests` options let tests inject
+  // stubs; production callers (app.js) pass no arguments and get the real
+  // worker-backed service.
+  constructor({
+    doSPARQL = defaultDoSPARQL,
+    cancelAllSparqlRequests = defaultCancelAllSparqlRequests,
+  } = {}) {
     super();
     this._doSPARQL = doSPARQL;
+    this._cancelAllSparqlRequests = cancelAllSparqlRequests;
     this.facetsList = [];
     this.breadcrumb = [];
     this.breadcrumbIndex = -1;
@@ -152,6 +160,18 @@ class ExplorerController extends EventTarget {
     } else {
       await this.search(facet);
     }
+  }
+
+  // User clicked the stop button in the footer. Terminate the SPARQL
+  // worker — every in-flight promise rejects with a CancelledError,
+  // which _executeCurrentQuery's catch branch recognises and turns
+  // into a clean "no results, no error" state instead of a red banner.
+  // The next search spawns a fresh worker automatically via getWorker().
+  //
+  // No-op if nothing is in flight.
+  cancelCurrentQuery() {
+    if (!this.isLoading) return;
+    this._cancelAllSparqlRequests();
   }
 
   removeFacet(index) {
@@ -287,10 +307,19 @@ class ExplorerController extends EventTarget {
       this._emit('results-changed');
     } catch (e) {
       if (token !== this._queryToken) return;
-      this.error = e;
-      this.results = null;
-      console.error('Query execution failed:', e);
-      this._emit('results-changed');
+      // User-initiated cancellation is NOT an error — it just clears
+      // the current results without raising a red banner. Everything
+      // else (network, parse, timeout) is a real error.
+      if (e?.name === 'CancelledError') {
+        this.error = null;
+        this.results = null;
+        this._emit('results-changed');
+      } else {
+        this.error = e;
+        this.results = null;
+        console.error('Query execution failed:', e);
+        this._emit('results-changed');
+      }
     } finally {
       if (token === this._queryToken) {
         this.isLoading = false;

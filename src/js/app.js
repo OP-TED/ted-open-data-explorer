@@ -87,6 +87,7 @@ new DataView(controller);
 new BacklinksView(controller);
 
 wireProgressBar(controller);
+wireStopButton(controller);
 initBootstrapTooltips();
 loadDataPeriod();
 searchPanel.init();
@@ -132,6 +133,23 @@ function wireProgressBar(controller) {
         fadeTimeout = null;
       }, PROGRESS_FADE_MS);
     }
+  });
+}
+
+// Wire the footer stop button. Visible only while a query is in flight;
+// clicking it asks the controller to terminate the SPARQL worker and
+// clear the current results (treated as a clean "no results", not an
+// error). No-op if no query is running.
+function wireStopButton(controller) {
+  const btn = document.getElementById('stop-query-btn');
+  if (!btn) return;
+
+  controller.addEventListener('loading-changed', () => {
+    btn.style.display = controller.isLoading ? 'flex' : 'none';
+  });
+
+  btn.addEventListener('click', () => {
+    controller.cancelCurrentQuery();
   });
 }
 

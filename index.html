@@ -364,6 +364,13 @@
             <span id="query-timer" class="position-absolute w-100 text-center small text-muted"
                   style="top: 0; left: 0; line-height: 1rem; font-size: 0.65rem; font-weight: 600;"></span>
         </div>
+        <!-- Stop button — only visible while a SPARQL query is in flight. -->
+        <button id="stop-query-btn" class="btn p-0 align-items-center justify-content-center"
+                aria-label="Cancel query" data-bs-toggle="tooltip" data-bs-placement="top"
+                title="Cancel query"
+                style="display: none; font-size: 1.2rem; line-height: 1; margin-left: 0.5rem; color: #dc3545; border: none;">
+            <i class="bi bi-x-circle-fill"></i>
+        </button>
     </footer>
 
     <!-- N3 parser (Turtle parsing) -->
