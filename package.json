@@ -1,6 +1,6 @@
 {
   "name": "ted-open-data-explorer",
-  "version": "2.0.0",
+  "version": "2.1.0-SNAPSHOT",
   "description": "TED Open Data Explorer — Bootstrap + Vanilla JS",
   "private": true,
   "type": "module",
